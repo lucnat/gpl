@@ -7,6 +7,7 @@
 ! Define GPL infinity
 ! Mach n optional
 ! Kommentar schreiben zu anderer Notation 
+! Funktion überprüfen! Tests schreiben!
 
 MODULE utils
   implicit none

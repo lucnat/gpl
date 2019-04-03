@@ -3,5 +3,6 @@
 !*.*
 !makefile
 *.out
+*.o
 *.mod
 *.smod

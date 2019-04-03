@@ -1,1 +1,26 @@
-sup
+
+UNAME_S := $(shell uname -s)
+
+SHA1=sha1sum
+FC=gfortran
+FFLAGS=-fdefault-real-8 -fdefault-real-8  -cpp
+
+LD=gfortran
+
+OBJ=functions.o
+
+
+# Rules for main fortran files
+%.o: %.f90
+		@echo "F90 $@"
+		@$(FC) $(FFLAGS) -c $<
+
+
+
+# Rules for linking
+test: $(OBJ) test.o
+		@echo "LD $@"
+		@$(LD) -o $@ $^  $(LFLAGS)
+
+clean:
+		@rm -f *.o *.mod 
