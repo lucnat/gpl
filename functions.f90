@@ -1,3 +1,4 @@
+
 MODULE functions
   implicit none
 
@@ -26,8 +27,18 @@ CONTAINS
 
     j = (/(i, i=1,n,1)/) 
     polylog = sum(x**j / j**m)
-    
   END FUNCTION polylog
+
+  FUNCTION multiple_polylog_converges(x)
+    ! checks if the MPL converges 
+    complex(kind=prec) :: x(:)
+    logical :: multiple_polylog_converges
+    if(abs(product(x)) < 1) then
+      multiple_polylog_converges = .true.
+    else
+      multiple_polylog_converges = .false.
+    end if
+  END FUNCTION multiple_polylog_converges
 
   recursive FUNCTION multiple_polylog(m, x, n_passed) result(res)
     ! Computes the multiple polylogarithm Li_{m1,...,mk} (x1,...,xk) up to order n
@@ -59,5 +70,12 @@ CONTAINS
     end if
   END FUNCTION multiple_polylog
 
+
 END MODULE functions
 
+! PROGRAM test
+!   use functions
+!   logical :: result
+!   result = multiple_polylog_converges( dcmplx((/10.1d0,.7d0,.3d0/)) )
+!   print*, result
+! end PROGRAM test

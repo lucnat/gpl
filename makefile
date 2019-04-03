@@ -3,7 +3,7 @@ UNAME_S := $(shell uname -s)
 
 SHA1=sha1sum
 FC=gfortran
-FFLAGS=-fdefault-real-8 -fdefault-real-8  -cpp
+FFLAGS=-fdefault-real-8 -cpp
 
 LD=gfortran
 
@@ -14,7 +14,6 @@ OBJ=functions.o
 %.o: %.f90
 		@echo "F90 $@"
 		@$(FC) $(FFLAGS) -c $<
-
 
 
 # Rules for linking
