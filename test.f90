@@ -12,8 +12,6 @@ PROGRAM TEST
 
   call do_MPL_tests() 
 
-  res = GPL()
-
 CONTAINS
   
   subroutine do_MPL_tests()
@@ -25,18 +23,18 @@ CONTAINS
     print*, 'doing multiple polylog tests...'
     
     m2 = (/ 1,1 /)
-    x2 = cmplx((/ 0.3156498673740053, 0.3431255827785649 /))
-    ref = cmplx(0.022696600480693277651633)
+    x2 = dcmplx((/ 0.3156498673740053, 0.3431255827785649 /))
+    ref = dcmplx(0.022696600480693277651633)
     call check_MPL(m2,x2,ref)
 
     m2 = (/ 1,1 /)
-    x2 = cmplx((/ 0.03, 0.5012562893380046 /))
-    ref = cmplx(0.00023134615630308335448329926098409)
+    x2 = dcmplx((/ 0.03, 0.5012562893380046 /))
+    ref = dcmplx(0.00023134615630308335448329926098409)
     call check_MPL(m2,x2,ref)
     
     m3 = (/ 2,1,2 /)
-    x3 = cmplx((/ 0.03, 0.5012562893380046, 55.3832 /))
-    ref = cmplx(0.000023446106415452030937059124671151)
+    x3 = dcmplx((/ 0.03, 0.5012562893380046, 55.3832 /))
+    ref = dcmplx(0.000023446106415452030937059124671151)
     call check_MPL(m3,x3,ref)
   end subroutine do_MPL_tests
 
