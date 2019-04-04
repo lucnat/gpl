@@ -1,5 +1,5 @@
-
-MODULE functions
+ 
+MODULE mpl_module
   implicit none
 
   integer, parameter :: prec = selected_real_kind(15,32)  
@@ -29,18 +29,18 @@ CONTAINS
     polylog = sum(x**j / j**m)
   END FUNCTION polylog
 
-  FUNCTION multiple_polylog_converges(x)
+  FUNCTION MPL_converges(x)
     ! checks if the MPL converges 
     complex(kind=prec) :: x(:)
-    logical :: multiple_polylog_converges
+    logical :: MPL_converges
     if(abs(product(x)) < 1) then
-      multiple_polylog_converges = .true.
+      MPL_converges = .true.
     else
-      multiple_polylog_converges = .false.
+      MPL_converges = .false.
     end if
-  END FUNCTION multiple_polylog_converges
+  END FUNCTION MPL_converges
 
-  recursive FUNCTION multiple_polylog(m, x, n_passed) result(res)
+  recursive FUNCTION MPL(m, x, n_passed) result(res)
     ! Computes the multiple polylogarithm Li_{m1,...,mk} (x1,...,xk) up to order n
     integer :: m(:)
     complex(kind=prec) :: x(:)
@@ -61,7 +61,7 @@ CONTAINS
       ! recursion step
       res = 0
       do i = 1, n    
-        res = res + x(1)**i / i**m(1) * multiple_polylog(m(2:), x(2:), i - 1)
+        res = res + x(1)**i / i**m(1) * MPL(m(2:), x(2:), i - 1)
       end do
 
       ! a nicer way to do it would be but problem is i
@@ -69,14 +69,13 @@ CONTAINS
       ! res = sum( x(1)**i / i**m(1) * multiple_polylog(m(2:), x(2:), i(1) - 1) )
       
     end if
-  END FUNCTION multiple_polylog
+  END FUNCTION MPL
 
-
-END MODULE functions
+END MODULE mpl_module
 
 ! PROGRAM test
-!   use functions
+!   use mpl_module
 !   logical :: result
-!   result = multiple_polylog_converges( dcmplx((/10.1d0,.7d0,.3d0/)) )
+!   result = MPL_converges( dcmplx((/10.1d0,.7d0,.3d0/)) )
 !   print*, result
 ! end PROGRAM test

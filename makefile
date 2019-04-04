@@ -7,7 +7,7 @@ FFLAGS=-fdefault-real-8 -cpp
 
 LD=gfortran
 
-OBJ=functions.o
+OBJ=mpl_module.o gpl_module.o
 
 
 # Rules for main fortran files
