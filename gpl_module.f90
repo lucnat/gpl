@@ -12,11 +12,6 @@ CONTAINS
     integer :: m(:), k, i
     complex(kind=prec) :: z(:), x(k), y, GPL
 
-    ! print*, 'GPL called with arguments:'
-    ! print*, 'm=',m
-    ! print*, 'z=',z
-    ! print*, 'y=',y
-
     do i = 1,k
       x(i) = merge(y/z(1), z(i-1)/z(i),i == 1)
     end do
@@ -34,10 +29,12 @@ END MODULE gpl_module
 !   integer :: m(2) = (/ 1,1 /)
 !   complex(kind=prec) :: z(2) = dcmplx((/ 1.3d0, 1.1d0 /))
 !   complex(kind=prec) :: y = 0.4
-!   complex(kind=prec) :: res
+!   complex(kind=prec) :: res, ref
   
 !   res = GPL(m,z,y,2)
+!   ref = dcmplx(0.0819393734128676)
 !   print*, 'res=',res
+!   print*, 'ref=',ref
 
 ! END PROGRAM test
 
