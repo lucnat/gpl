@@ -66,7 +66,8 @@ CONTAINS
 
       ! a nicer way to do it would be but problem is i
       ! i = (/(j, j=1,n, 1)/)
-      ! res = sum( x(1)**i / i**m(1) * multiple_polylog(m(2:), x(2:), i(1) - 1) )
+      ! res = sum( x(1)**i / i**m(1) * MPL(m(2:), x(2:), i(1) - 1) )
+      ! we could get around this problem by rewriting MPL to operate on each i and returning an array
       
     end if
   END FUNCTION MPL
