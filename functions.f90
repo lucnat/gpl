@@ -49,6 +49,7 @@ CONTAINS
     integer :: i, n
 
     n = merge(n_passed,GPLInfinity,present(n_passed))  
+
     if(size(m) /= size(x)) then
       print*, 'Error: m and x must have the same length'
     end if
