@@ -11,7 +11,7 @@ PROGRAM TEST
   real, parameter :: tol = 1.0e-14
   integer :: testnr
 
-  call do_MPL_tests() 
+  ! call do_MPL_tests() 
   call do_GPL_tests()
 
 CONTAINS
@@ -70,26 +70,35 @@ CONTAINS
   end subroutine check_one_MPL
 
   subroutine do_GPL_tests()
-    integer :: m(2), k
-    complex(kind=prec) :: z(2), y, res, ref
+    integer :: m2(2), m1(1), k
+    complex(kind=prec) :: z2(2), z1(1), y, res, ref
     print*, 'doing GPL tests...'
 
     testnr = 11
-    m = (/ 1,1 /)
-    z = dcmplx((/ 1.3d0, 1.1d0 /))
+    m2 = (/ 1,1 /)
+    z2 = dcmplx((/ 1.3d0, 1.1d0 /))
     y = 0.4
     k = 2
-    res = GPL(m,z,y,k)
+    res = GPL(m2,z2,y,k)
     ref = dcmplx(0.0819393734128676)
     call check(res,ref)
 
     testnr = 12
-    m = (/ 3,2 /)
-    z = dcmplx((/ 1.3d0, 1.1d0 /))
+    m2 = (/ 3,2 /)
+    z2 = dcmplx((/ 1.3d0, 1.1d0 /))
     y = 0.4
     k = 2
-    res = GPL(m,z,y,k)
+    res = GPL(m2,z2,y,k)
     ref = dcmplx(0.01592795952537145)
+    call check(res,ref)
+
+    testnr = 13
+    m1 = (/ 4 /)
+    z1 = dcmplx((/ 0 /))
+    y = 1.6
+    k = 1
+    res = GPL(m1,z1,y,k)
+    ref = dcmplx(0.0173042341866201179)
     call check(res,ref)
 
   end subroutine do_GPL_tests
