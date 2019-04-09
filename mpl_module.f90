@@ -29,14 +29,16 @@ CONTAINS
     polylog = sum(x**j / j**m)
   END FUNCTION polylog
 
-  FUNCTION MPL_converges(x)
+  FUNCTION MPL_converges(m,x)
     ! checks if the MPL converges 
     complex(kind=prec) :: x(:)
+    integer :: m(:)
     logical :: MPL_converges
+    MPL_converges = .false.
     if(abs(product(x)) < 1) then
-      MPL_converges = .true.
-    else
-      MPL_converges = .false.
+      if(m(1) /= 1 .or. x(1) /= 1) then
+        MPL_converges = .true.
+      end if
     end if
   END FUNCTION MPL_converges
 
@@ -77,6 +79,6 @@ END MODULE mpl_module
 ! PROGRAM test
 !   use mpl_module
 !   logical :: result
-!   result = MPL_converges( dcmplx((/10.1d0,.7d0,.3d0/)) )
+!   result = MPL_converges( dcmplx((/1.0d0,.7d0,.3d0/)), (/ 1,2,1 /) )
 !   print*, result
 ! end PROGRAM test
