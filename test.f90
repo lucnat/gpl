@@ -10,9 +10,8 @@ PROGRAM TEST
   complex(kind=prec) :: res 
   real, parameter :: tol = 1.0e-14
   logical :: tests_successful = .true.
-    
-
-  ! call do_MPL_tests() 
+  
+  call do_MPL_tests() 
   call do_GPL_tests()
   
   if(tests_successful) then
@@ -58,8 +57,7 @@ CONTAINS
     call test_one_MPL((/ 1,1 /),cmplx((/ 0.03, 0.5012562893380046 /)),ref, '1.2')
     
     ref = dcmplx(0.000023446106415452030937059124671151)
-    call test_one_MPL((/ 2,1,2 /),cmplx((/ 0.03, 0.5012562893380046, 55.3832 /)),ref, '1.3')
-    
+    call test_one_MPL((/ 2,1,2 /),cmplx((/ 0.03, 0.5012562893380046, 55.3832 /)),ref, '1.3')  
   end subroutine do_MPL_tests
 
   subroutine test_one_GPL(m,z,y,k,ref,test_id)
@@ -74,6 +72,7 @@ CONTAINS
 
   subroutine do_GPL_tests()
     complex(kind=prec) :: ref
+    complex(kind=prec), parameter :: epsilon = 1E-14
     print*, 'doing GPL tests...'
     
     ref = dcmplx(0.0819393734128676)
@@ -84,7 +83,9 @@ CONTAINS
     
     ref = dcmplx(0.0020332632172573974)
     call test_one_GPL((/ 4 /),cmplx((/ 0 /)),cmplx(1.6),1,ref,'2.3')
-    
+
+    ref = dcmplx(0.0020332632172573974)
+    call test_one_GPL((/ 1 /),(/(0.7,epsilon)/),(1.1,1.4),1,ref,'2.4')
   end subroutine do_GPL_tests
 
 END PROGRAM TEST

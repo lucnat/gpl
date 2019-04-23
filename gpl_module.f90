@@ -51,10 +51,10 @@ CONTAINS
   FUNCTION GPL(m,z,y,k)
     ! computes the generalized polylogarithm G_{m1,..mk} (z1,...zk; y)
     ! assumes zero arguments expressed through the m's
-
+    
     integer :: m(:), k, i
     complex(kind=prec) :: z(:), x(k), y, GPL
-
+    
     ! are all z_i = 0 ? 
     if(k == 1 .and. z(1) == 0) then
       ! for that we assume that only one argument was passed, the rest through m1
@@ -62,9 +62,14 @@ CONTAINS
       return
     end if
 
-    ! do they have convergent series rep?
+    ! need make convergent?
     if(.not. GPL_has_convergent_series(m,z,y,k)) then
-      print*, '  ', 'does not have convergent series representation'
+      print*, 'need to make convergent'
+      if(k == 1 .and. m(1) == 1) then
+        print*, 'now we use the easy case. ha. ha.'
+      else
+        print*, '  ', 'does not have convergent series representation'
+      end if
     end if
 
     do i = 1,k
@@ -76,19 +81,4 @@ CONTAINS
 
 END MODULE gpl_module
 
-! PROGRAM test
-!   ! used to test this module
-!   use gpl_module
-  
-!   integer :: m(2) = (/ 1,1 /)
-!   complex(kind=prec) :: z(2) = dcmplx((/ 1.3d0, 1.1d0 /))
-!   complex(kind=prec) :: y = 0.4
-!   complex(kind=prec) :: res, ref
-  
-!   res = GPL(m,z,y,2)
-!   ref = dcmplx(0.0819393734128676)
-!   print*, 'res=',res
-!   print*, 'ref=',ref
-
-! END PROGRAM test
 
