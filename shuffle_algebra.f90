@@ -21,8 +21,8 @@ PROGRAM shuffle_algebra
     integer :: length
   end type word_sum
 
-  type(word) :: v1 = word("abcd",4)
-  type(word) :: v2 = word("1234",4)
+  type(word) :: v1 = word("abc",3)
+  type(word) :: v2 = word("123",3)
   type(word) :: w1
   type(word_sum) :: ws, ws1, ws2
 
