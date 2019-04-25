@@ -1,8 +1,8 @@
  
 MODULE mpl_module
+  use  utils
   implicit none
 
-  integer, parameter :: prec = selected_real_kind(15,32)  
   integer :: GPLInfinity = 30   ! the default n if it is not passed
 
 CONTAINS 

@@ -3,6 +3,7 @@
 ! These tests assume that GPLInfinity = 30
 
 PROGRAM TEST
+  use utils
   use mpl_module
   use gpl_module
   implicit none
@@ -11,7 +12,7 @@ PROGRAM TEST
   real, parameter :: tol = 1.0e-14
   logical :: tests_successful = .true.
   
-  call do_MPL_tests() 
+  ! call do_MPL_tests() 
   call do_GPL_tests()
   
   if(tests_successful) then
@@ -20,7 +21,7 @@ PROGRAM TEST
     print*, 'Some tests failed. '
     stop 1
   end if
-  
+
 CONTAINS
   
   subroutine check(res, ref)
@@ -83,9 +84,12 @@ CONTAINS
     
     ref = dcmplx(0.0020332632172573974)
     call test_one_GPL((/ 4 /),cmplx((/ 0 /)),cmplx(1.6),1,ref,'2.3')
+    
+    ! ref = dcmplx(0.0020332632172573974)
+    ! call test_one_GPL((/ 1,1 /),cmplx((/ 1.7,0.0 /)),cmplx(1.1),2,ref,'2.4')
 
-    ref = dcmplx(0.0020332632172573974)
-    call test_one_GPL((/ 1 /),(/(0.7,epsilon)/),(1.1,1.4),1,ref,'2.4')
+    ! ref = dcmplx(0.0020332632172573974)
+    ! call test_one_GPL((/ 1 /),(/(0.7,epsilon)/),(1.1,1.4),1,ref,'2.4')
   end subroutine do_GPL_tests
 
 END PROGRAM TEST

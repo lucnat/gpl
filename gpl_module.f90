@@ -1,10 +1,11 @@
 
 MODULE gpl_module
   use mpl_module
-
+  use utils
   implicit none
 
 CONTAINS 
+
 
   RECURSIVE FUNCTION factorial(n) result(res)
     integer, intent(in) :: n
@@ -43,24 +44,59 @@ CONTAINS
     ! used to compute the value of GPL when all zi are zero
     integer :: l
     complex(kind=prec) :: y, GPL_zero_zi
-
+    print*, 'computed value using zero'
     GPL_zero_zi = 1.0d0/factorial(l) * log(y) ** l
 
   END FUNCTION GPL_zero_zi
 
-  FUNCTION GPL(m,z,y,k)
+  FUNCTION  G_with_flat_args(z_flat,y) result(res)
+    complex(kind=prec) :: z_flat(:), y, res
+    complex(kind=prec), allocatable :: z(:)
+    integer :: m_prime(size(z_flat)), condensed_size
+    integer, allocatable :: m(:)
+    m_prime = get_condensed_m(z_flat)
+    if(find_first_zero(m_prime) == -1) then
+      condensed_size = size(m_prime)
+    else
+      condensed_size = find_first_zero(m_prime)-1 
+    end if
+    allocate(m(condensed_size))
+    allocate(z(condensed_size))
+    m = m_prime(1:condensed_size)
+    z = get_condensed_z(m,z_flat)
+    res = GPL(m,z,y,size(m))
+    deallocate(m)
+    deallocate(z)
+  END  FUNCTION G_with_flat_args
+
+  RECURSIVE FUNCTION GPL(m,z,y,k) result(res)
     ! computes the generalized polylogarithm G_{m1,..mk} (z1,...zk; y)
     ! assumes zero arguments expressed through the m's
     
     integer :: m(:), k, i
-    complex(kind=prec) :: z(:), x(k), y, GPL
-    
+    complex(kind=prec) :: z(:), x(k), y, res, c(sum(m)+1,sum(m)+1), z_flat(sum(m)), a(sum(m)-1)
+
+    ! print*, 'z = ', abs(get_flattened_z(m,z))
     ! are all z_i = 0 ? 
-    if(k == 1 .and. z(1) == 0) then
-      ! for that we assume that only one argument was passed, the rest through m1
-      GPL = GPL_zero_zi(m(1),y)
+    if(k == 1 .and. abs(z(1)) < zero) then
+      ! assumes that the zeros at the beginning are passed through m1
+      res = GPL_zero_zi(m(1),y)
       return
     end if
+
+    !  need to remove trailing  zeros?
+    if(abs(z(k)) < zero ) then
+      print*, 'need to remove trailing zeros'
+      ! flatten z
+      z_flat = get_flattened_z(m,z)
+      a = z_flat(1: (size(z_flat)-1))
+      c = shuffle_with_zero(a)
+      res = G_with_flat_args(a,y)*log(y)
+      do  i = 2,k
+        res = res - G_with_flat_args(c(i,:),y)
+      end do
+      return
+    end  if
 
     ! need make convergent?
     if(.not. GPL_has_convergent_series(m,z,y,k)) then
@@ -70,12 +106,15 @@ CONTAINS
       else
         print*, '  ', 'does not have convergent series representation'
       end if
+      res = 0
+      return
     end if
 
     do i = 1,k
       x(i) = merge(y/z(1), z(i-1)/z(i),i == 1)
     end do
-    GPL = (-1)**k * MPL(m,x)
+    print*, 'computed using MPL'
+    res = (-1)**k * MPL(m,x)
 
   END FUNCTION GPL
 
