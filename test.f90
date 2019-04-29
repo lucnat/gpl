@@ -85,11 +85,9 @@ CONTAINS
     ref = dcmplx(0.0020332632172573974)
     call test_one_GPL((/ 4 /),cmplx((/ 0 /)),cmplx(1.6),1,ref,'2.3')
     
-    ! ref = dcmplx(0.0020332632172573974)
-    ! call test_one_GPL((/ 1,1 /),cmplx((/ 1.7,0.0 /)),cmplx(1.1),2,ref,'2.4')
+    ref = dcmplx(0.0020332632172573974)
+    call test_one_GPL((/ 1,1 /),cmplx((/ 1.7,0.0 /)),cmplx(1.1),2,ref,'2.4')
 
-    ! ref = dcmplx(0.0020332632172573974)
-    ! call test_one_GPL((/ 1 /),(/(0.7,epsilon)/),(1.1,1.4),1,ref,'2.4')
   end subroutine do_GPL_tests
 
 END PROGRAM TEST

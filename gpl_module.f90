@@ -44,12 +44,13 @@ CONTAINS
     ! used to compute the value of GPL when all zi are zero
     integer :: l
     complex(kind=prec) :: y, GPL_zero_zi
-    print*, 'computed value using zero'
+    print*, 'computed value using zi = 0'
     GPL_zero_zi = 1.0d0/factorial(l) * log(y) ** l
 
   END FUNCTION GPL_zero_zi
 
   FUNCTION  G_with_flat_args(z_flat,y) result(res)
+    ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
     complex(kind=prec) :: z_flat(:), y, res
     complex(kind=prec), allocatable :: z(:)
     integer :: m_prime(size(z_flat)), condensed_size
@@ -73,29 +74,31 @@ CONTAINS
     ! computes the generalized polylogarithm G_{m1,..mk} (z1,...zk; y)
     ! assumes zero arguments expressed through the m's
     
-    integer :: m(:), k, i
+    integer :: m(:), k, i, kminusj
     complex(kind=prec) :: z(:), x(k), y, res, c(sum(m)+1,sum(m)+1), z_flat(sum(m)), a(sum(m)-1)
 
     ! print*, 'z = ', abs(get_flattened_z(m,z))
     ! are all z_i = 0 ? 
-    if(k == 1 .and. abs(z(1)) < zero) then
+    if(k == 1 .and. abs(z(1)) == 0) then
       ! assumes that the zeros at the beginning are passed through m1
       res = GPL_zero_zi(m(1),y)
       return
     end if
 
     !  need to remove trailing  zeros?
-    if(abs(z(k)) < zero ) then
-      print*, 'need to remove trailing zeros'
+    if(abs(z(k)) == 0 ) then
+      print*, 'need to remove trailing zeros'   ! which we do in flat form
       ! flatten z
       z_flat = get_flattened_z(m,z)
-      a = z_flat(1: (size(z_flat)-1))
-      c = shuffle_with_zero(a)
-      res = G_with_flat_args(a,y)*log(y)
-      do  i = 2,k
-        res = res - G_with_flat_args(c(i,:),y)
-      end do
-      return
+      res = G_with_flat_args(z_flat,y)
+
+      ! a = z_flat(1: (size(z_flat)-1))
+      ! c = shuffle_with_zero(a)
+      ! res = G_with_flat_args(a,y)*log(y)
+      ! do  i = 2,k
+      !   res = res - G_with_flat_args(c(i,:),y)
+      ! end do
+      ! return
     end  if
 
     ! need make convergent?
