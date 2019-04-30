@@ -6,7 +6,6 @@ MODULE gpl_module
 
 CONTAINS 
 
-
   RECURSIVE FUNCTION factorial(n) result(res)
     integer, intent(in) :: n
     integer :: res
@@ -37,7 +36,6 @@ CONTAINS
         GPL_has_convergent_series = .true.
       end if
     end if
-
   END FUNCTION GPL_has_convergent_series
 
   FUNCTION GPL_zero_zi(l,y)
@@ -46,15 +44,39 @@ CONTAINS
     complex(kind=prec) :: y, GPL_zero_zi
     print*, 'computed value using zi = 0'
     GPL_zero_zi = 1.0d0/factorial(l) * log(y) ** l
-
   END FUNCTION GPL_zero_zi
 
-  FUNCTION  G_with_flat_args(z_flat,y) result(res)
+  RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
     complex(kind=prec) :: z_flat(:), y, res
-    complex(kind=prec), allocatable :: z(:)
-    integer :: m_prime(size(z_flat)), condensed_size
+    complex(kind=prec), allocatable :: z(:), s(:,:)
+    integer :: m_prime(size(z_flat)), condensed_size, kminusj, j, k, i
     integer, allocatable :: m(:)
+
+    print*, 'G_flat called with args', abs(z_flat)
+
+    ! remove trailing zeroes
+    k = size(z_flat)
+    kminusj = find_amount_trailing_zeros(z_flat)
+    j = k - kminusj
+    if(all(abs(z_flat) < zero)) then 
+      print*, 'all are zero', abs(z_flat)
+      res = GPL_zero_zi(k,y)
+      return
+    else if(kminusj > 0) then
+      print*, 'we have',kminusj,'trailing zeroes'
+      allocate(s(j,j))
+      s = shuffle_with_zero(z_flat(1:j-1))
+      res = log(y)*G_flat(z_flat(1:size(z_flat)-1),y)
+      do i = 1,size(s,1)
+        res = res - G_flat([s(i,:),z_flat(j),zero_array(kminusj-1)], y)
+      end do
+      res = res / kminusj
+      deallocate(s)
+      return
+    end if
+
+    ! transform to condensed notation
     m_prime = get_condensed_m(z_flat)
     if(find_first_zero(m_prime) == -1) then
       condensed_size = size(m_prime)
@@ -65,40 +87,35 @@ CONTAINS
     allocate(z(condensed_size))
     m = m_prime(1:condensed_size)
     z = get_condensed_z(m,z_flat)
-    res = GPL(m,z,y,size(m))
+
+    res = G_condensed(m,z,y,size(m))
     deallocate(m)
     deallocate(z)
-  END  FUNCTION G_with_flat_args
+  END  FUNCTION G_flat
 
-  RECURSIVE FUNCTION GPL(m,z,y,k) result(res)
+  RECURSIVE FUNCTION G_condensed(m,z,y,k) result(res)
     ! computes the generalized polylogarithm G_{m1,..mk} (z1,...zk; y)
     ! assumes zero arguments expressed through the m's
     
-    integer :: m(:), k, i, kminusj
+    integer :: m(:), k, i
     complex(kind=prec) :: z(:), x(k), y, res, c(sum(m)+1,sum(m)+1), z_flat(sum(m)), a(sum(m)-1)
 
-    ! print*, 'z = ', abs(get_flattened_z(m,z))
+    print*, 'called G_condensed with args'
+    print*, 'm = ', m
+    print*, 'z = ', abs(z)
+
     ! are all z_i = 0 ? 
-    if(k == 1 .and. abs(z(1)) == 0) then
+    if(k == 1 .and. abs(z(1)) < zero) then
       ! assumes that the zeros at the beginning are passed through m1
       res = GPL_zero_zi(m(1),y)
       return
     end if
 
-    !  need to remove trailing  zeros?
-    if(abs(z(k)) == 0 ) then
-      print*, 'need to remove trailing zeros'   ! which we do in flat form
-      ! flatten z
+    ! has trailing zeroes?
+    if(abs(z(k)) < zero ) then
+      ! we remove them in flat form
       z_flat = get_flattened_z(m,z)
-      res = G_with_flat_args(z_flat,y)
-
-      ! a = z_flat(1: (size(z_flat)-1))
-      ! c = shuffle_with_zero(a)
-      ! res = G_with_flat_args(a,y)*log(y)
-      ! do  i = 2,k
-      !   res = res - G_with_flat_args(c(i,:),y)
-      ! end do
-      ! return
+      res = G_flat(z_flat,y)
     end  if
 
     ! need make convergent?
@@ -118,8 +135,7 @@ CONTAINS
     end do
     print*, 'computed using MPL'
     res = (-1)**k * MPL(m,x)
-
-  END FUNCTION GPL
+  END FUNCTION G_condensed
 
 END MODULE gpl_module
 

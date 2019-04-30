@@ -12,7 +12,7 @@
 MODULE utils
   implicit none
   integer, parameter :: prec = selected_real_kind(15,32)  
-
+  real :: zero = 1e-15
   ! logical :: print_enabled = .true.
   ! logical :: warnings_enabled = .true.
 
@@ -20,11 +20,12 @@ CONTAINS
 
   FUNCTION  get_condensed_m(z) result(m)
     ! returns condensed m where the ones not needed are filled with 0
-    complex(kind=prec) :: z(:), m(size(z))
-    integer :: pos = 1, i 
+    complex(kind=prec), intent(in) :: z(:)
+    integer :: m(size(z)), pos, i 
     m = 1
+    pos = 1
     do i = 1,size(z)
-      if(z(i) == 0) then
+      if(abs(z(i)) < zero) then
         if(i == size(z)) then
           pos = pos + 1
         else 
@@ -65,7 +66,7 @@ CONTAINS
     integer :: res, i
     res = 0
     do i = size(z), 1, -1
-      if( z(i) == 0 ) then
+      if( abs(z(i)) < zero ) then
         res = res + 1
       else
         exit
@@ -91,9 +92,15 @@ CONTAINS
     integer :: s(2), i
     s = shape(m)
     do i = 1,s(1)
-      print*, m(i,:)
+      print*, abs(m(i,:))
     end do
   END SUBROUTINE print_as_matrix
+
+  FUNCTION zero_array(n) result(res)
+    integer :: n
+    complex(kind=prec) :: res(n)
+    res = 0
+  END FUNCTION zero_array
 
   FUNCTION shuffle_with_zero(a) result(res)
     ! rows of result are shuffles of a with 0
@@ -130,35 +137,21 @@ END MODULE utils
 ! PROGRAM test
 !   use  utils
 !   implicit none
+  
+!   complex(kind=prec) :: z(4)
+!   integer :: m_prime(4), condensed_size
+!   z = cmplx((/0.0,1.7,0.0,0.0/))
 
-
-!   ! complex(kind=prec), dimension(5) :: a = cmplx((/1,2,3/))
-!   ! complex(kind=prec) :: z_flat(2)
-!   ! complex(kind=prec), allocatable :: z(:)
-!   ! integer :: m_prime(2), condensed_size
-!   ! integer, allocatable :: m(:)
-!   ! complex(kind=prec) :: b(size(a)+1,size(a)+1)
-
-!   ! ! ! test shuffling
-!   ! ! b = 1
-!   ! ! b = shuffle_with_zero(a)
-!   ! ! call print_as_matrix(b)
-
-!   ! ! test condensing
-!   ! z_flat = cmplx((/4,0/))
-!   ! m_prime = get_condensed_m(z_flat)
-!   ! if(find_first_zero(m_prime) == -1) then
-!   !   condensed_size = size(m_prime)
-!   ! else
-!   !   condensed_size = find_first_zero(m_prime)-1 
-!   ! end if
-!   ! allocate(m(condensed_size))
-!   ! allocate(z(condensed_size))
-!   ! m = m_prime(1:condensed_size)
-!   ! z = get_condensed_z(m,z_flat)
-!   ! z_flat = get_flattened_z(m,z)
-!   ! deallocate(m)
-!   ! deallocate(z)
+!   ! transform to condensed notation
+!   m_prime = get_condensed_m(z)
+!   print*, abs(z)
+!   m_prime = get_condensed_m(z)
+!   print*, abs(z)
+!   if(find_first_zero(m_prime) == -1) then
+!     condensed_size = size(m_prime)
+!   else
+!     condensed_size = find_first_zero(m_prime)-1 
+!   end if
+!   print*, condensed_size
 
 ! END  PROGRAM test
-
