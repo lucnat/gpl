@@ -46,6 +46,20 @@ CONTAINS
     GPL_zero_zi = 1.0d0/factorial(l) * log(y) ** l
   END FUNCTION GPL_zero_zi
 
+  FUNCTION is_convergent(z,y)
+    ! returns true if G(z,y) convergent, otherwise false
+    complex(kind=prec) :: z(:), y
+    logical :: is_convergent
+    integer :: i
+
+    is_convergent = .true.
+    do i = 1,size(z)
+      if(abs(z(i)) < zero) cycle  ! skip zero values
+      if(abs(y) > abs(z(i))) is_convergent = .false.
+    end do
+
+  END FUNCTION is_convergent
+
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
     complex(kind=prec) :: z_flat(:), y, res
@@ -87,7 +101,6 @@ CONTAINS
     allocate(z(condensed_size))
     m = m_prime(1:condensed_size)
     z = get_condensed_z(m,z_flat)
-
     res = G_condensed(m,z,y,size(m))
     deallocate(m)
     deallocate(z)
