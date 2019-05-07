@@ -27,7 +27,7 @@ PROGRAM shuffle_algebra
   type(word_sum) :: ws, ws1, ws2
 
   ws = shuffle_product(v1,v2)
-  call print_word_sum(ws)
+  print*, ws%words
 CONTAINS
      
   RECURSIVE FUNCTION shuffle_product(v1, v2) result(res)

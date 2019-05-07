@@ -61,7 +61,7 @@ CONTAINS
     call test_one_MPL((/ 2,1,2 /),cmplx((/ 0.03, 0.5012562893380046, 55.3832 /)),ref, '1.3')  
   end subroutine do_MPL_tests
 
-  subroutine test_one_GPL(m,z,y,k,ref,test_id)
+  subroutine test_one_condensed(m,z,y,k,ref,test_id)
     integer :: m(:), k
     complex(kind=prec) :: z(:), y, res, ref
     character(len=*) :: test_id
@@ -69,23 +69,33 @@ CONTAINS
     print*, '  ', 'testing GPL ', test_id, ' ...'
     res = G_condensed(m,z,y,k)
     call check(res,ref)
-  end subroutine test_one_GPL
+  end subroutine test_one_condensed
+
+  subroutine test_one_flat(z,y,ref,test_id)
+    complex(kind=prec) :: z(:), y, res, ref
+    character(len=*) :: test_id
+
+    print*, '  ', 'testing GPL ', test_id, ' ...'
+    res = G_flat(z,y)
+    call check(res,ref)
+  end subroutine test_one_flat
 
   subroutine do_GPL_tests()
     complex(kind=prec) :: ref
     complex(kind=prec), parameter :: epsilon = 1E-14
     print*, 'doing GPL tests...'
     
-    ref = dcmplx(0.0819393734128676)
-    call test_one_GPL((/ 1,1 /),cmplx((/ 1.3d0, 1.1d0 /)),cmplx(0.4),2,ref,'2.1')
+    ! ref = dcmplx(0.0819393734128676)
+    ! call test_one_condensed((/ 1,1 /),cmplx((/ 1.3d0, 1.1d0 /)),cmplx(0.4),2,ref,'2.1')
     
-    ref = dcmplx(0.01592795952537145)
-    call test_one_GPL((/ 3,2 /),cmplx((/ 1.3d0, 1.1d0 /)),cmplx(0.4),2,ref,'2.2')
+    ! ref = dcmplx(0.01592795952537145)
+    ! call test_one_condensed((/ 3,2 /),cmplx((/ 1.3d0, 1.1d0 /)),cmplx(0.4),2,ref,'2.2')
     
-    ref = dcmplx(0.0020332632172573974)
-    call test_one_GPL((/ 4 /),cmplx((/ 0 /)),cmplx(1.6),1,ref,'2.3')
+    ! ref = dcmplx(0.0020332632172573974)
+    ! call test_one_condensed((/ 4 /),cmplx((/ 0 /)),cmplx(1.6),1,ref,'2.3')
 
-    ! call test_one_GPL((/1,1,1/),cmplx((/ 0.0,1.7,0.0 /)),cmplx(1.1),3,ref,'2.4')
+    ref = dcmplx(0.0020332632172573974)
+    call test_one_flat(cmplx((/0.0,1.7,0.5/)),cmplx(1.1),ref,'2.5')
   end subroutine do_GPL_tests
 
 END PROGRAM TEST

@@ -9,7 +9,7 @@ CONTAINS
   RECURSIVE FUNCTION factorial(n) result(res)
     integer, intent(in) :: n
     integer :: res
-    res = merge(1,n*factorial(n-1),n==1)
+    res = merge(1,n*factorial(n-1),n==0)
   END FUNCTION factorial
 
   FUNCTION zeta(n) 
@@ -69,7 +69,13 @@ CONTAINS
 
     print*, 'G_flat called with args', abs(z_flat)
 
-    ! remove trailing zeroes
+    ! need make convergent?
+    if(.not. is_convergent(z_flat,y)) then
+      print*, 'need to make convergent'
+      res = 0
+      return
+    end if
+    ! need remove trailing zeroes?
     k = size(z_flat)
     kminusj = find_amount_trailing_zeros(z_flat)
     j = k - kminusj
@@ -134,8 +140,8 @@ CONTAINS
     ! need make convergent?
     if(.not. GPL_has_convergent_series(m,z,y,k)) then
       print*, 'need to make convergent'
-      if(k == 1 .and. m(1) == 1) then
-        print*, 'now we use the easy case. ha. ha.'
+      if(k == 1 .and. m(1) == 1) then ! use (59)
+
       else
         print*, '  ', 'does not have convergent series representation'
       end if
