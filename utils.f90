@@ -4,17 +4,27 @@
 ! Write your own print function with ability to suppress print
 ! Muss immer alle prints und warnings ausschalten können
 ! Test Programm schreiben mit exit codes -> gfortran 'test.f90' und dann 'echo $?'
-! Define GPL infinity
-! Mach n optional
-! Kommentar schreiben zu anderer Notation 
-! Funktion überprüfen! Tests schreiben!
 
 MODULE utils
+  use globals
   implicit none
-  integer, parameter :: prec = selected_real_kind(15,32)  
-  real :: zero = 1e-15
   ! logical :: print_enabled = .true.
   ! logical :: warnings_enabled = .true.
+
+  INTERFACE print_matrix
+    ! prints 2d array as matrix. For complex it takes absolutes
+    
+    SUBROUTINE print_integer_matrix(m) 
+      integer :: m(:,:)
+      integer :: s(2)
+    END SUBROUTINE print_integer_matrix
+
+  SUBROUTINE print_complex_matrix(m) 
+    complex :: m(:,:)
+    integer :: s(2)
+  END SUBROUTINE print_complex_matrix
+
+  END INTERFACE print_matrix
 
 CONTAINS
 
@@ -86,16 +96,6 @@ CONTAINS
     end do
   END FUNCTION find_first_zero
 
-  SUBROUTINE print_as_matrix(m) 
-    ! prints a 2d array as a matrix
-    complex :: m(:,:)
-    integer :: s(2), i
-    s = shape(m)
-    do i = 1,s(1)
-      print*, abs(m(i,:))
-    end do
-  END SUBROUTINE print_as_matrix
-
   FUNCTION zero_array(n) result(res)
     integer :: n
     complex(kind=prec) :: res(n)
@@ -133,6 +133,25 @@ CONTAINS
   ! end subroutine warn
 
 END MODULE utils
+
+
+SUBROUTINE print_integer_matrix(m) 
+  integer :: m(:,:)
+  integer :: s(2), i
+  s = shape(m)
+  do i = 1,s(1)
+    print*, m(i,:)
+  end do
+END SUBROUTINE print_integer_matrix
+
+SUBROUTINE print_complex_matrix(m) 
+  complex :: m(:,:)
+  integer :: s(2), i
+  s = shape(m)
+  do i = 1,s(1)
+    print*, abs(m(i,:))
+  end do
+END SUBROUTINE print_complex_matrix
 
 ! PROGRAM test
 !   use  utils

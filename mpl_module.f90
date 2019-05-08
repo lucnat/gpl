@@ -1,9 +1,8 @@
  
 MODULE mpl_module
-  use  utils
+  use globals
+  use utils
   implicit none
-
-  integer :: GPLInfinity = 30   ! the default n if it is not passed
 
 CONTAINS 
 

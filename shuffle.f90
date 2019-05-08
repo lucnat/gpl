@@ -1,15 +1,7 @@
 
-PROGRAM shuffle_algebra
+MODULE shuffle
+  use globals
   implicit none
-
-  integer :: v1(2), v2(2)
-  integer :: amount_shuffles
-  integer :: res(3,3)
-
-  v1 = (/1,2/)
-  v2 = (/3,4/)
-
-  call print_as_matrix(shuffle_product(v1,v2))
 
 CONTAINS
   
@@ -21,7 +13,7 @@ CONTAINS
       res(i,:) = [a,m(i,:)]
     end do
   END FUNCTION append_to_each_row
-  
+
   FUNCTION stack_matrices_vertically(m1, m2) result(res)
     ! appends to matrix m1 the rows of matrix m2
     integer :: m1(:,:), m2(:,:)
@@ -30,16 +22,6 @@ CONTAINS
     res(size(m1,1)+1:size(res,1),:) = m2 
   END FUNCTION stack_matrices_vertically
   
-  SUBROUTINE print_as_matrix(m) 
-    ! prints a 2d array as a matrix
-    integer :: m(:,:)
-    integer :: s(2), i
-    s = shape(m)
-    do i = 1,s(1)
-      print*, abs(m(i,:))
-    end do
-  END SUBROUTINE print_as_matrix
-
   RECURSIVE FUNCTION factorial(n) result(res)
     integer, intent(in) :: n
     integer :: res
@@ -79,6 +61,20 @@ CONTAINS
       append_to_each_row(beta, shuffle_product(v1, w2)) )
   END FUNCTION shuffle_product
 
-END PROGRAM shuffle_algebra
+END MODULE shuffle
 
+! PROGRAM test
+!   use shuffle_algebra
+!   implicit none
+
+!   integer :: v1(3), v2(3)
+!   integer :: amount_shuffles
+!   integer :: res(3,3)
+
+!   v1 = (/1,2,3/)
+!   v2 = (/-1,-2,-3/)
+
+!   call print_as_matrix(shuffle_product(v1, v2))
+
+! END PROGRAM test
 

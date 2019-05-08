@@ -1,7 +1,8 @@
 
 MODULE gpl_module
-  use mpl_module
+  use globals
   use utils
+  use mpl_module
   implicit none
 
 CONTAINS 
@@ -67,8 +68,6 @@ CONTAINS
     integer :: m_prime(size(z_flat)), condensed_size, kminusj, j, k, i
     integer, allocatable :: m(:)
 
-    print*, 'G_flat called with args', abs(z_flat)
-
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
       print*, 'need to make convergent'
@@ -80,11 +79,9 @@ CONTAINS
     kminusj = find_amount_trailing_zeros(z_flat)
     j = k - kminusj
     if(all(abs(z_flat) < zero)) then 
-      print*, 'all are zero', abs(z_flat)
       res = GPL_zero_zi(k,y)
       return
     else if(kminusj > 0) then
-      print*, 'we have',kminusj,'trailing zeroes'
       allocate(s(j,j))
       s = shuffle_with_zero(z_flat(1:j-1))
       res = log(y)*G_flat(z_flat(1:size(z_flat)-1),y)
@@ -119,9 +116,9 @@ CONTAINS
     integer :: m(:), k, i
     complex(kind=prec) :: z(:), x(k), y, res, c(sum(m)+1,sum(m)+1), z_flat(sum(m)), a(sum(m)-1)
 
-    print*, 'called G_condensed with args'
-    print*, 'm = ', m
-    print*, 'z = ', abs(z)
+    ! print*, 'called G_condensed with args'
+    ! print*, 'm = ', m
+    ! print*, 'z = ', abs(z)
 
     ! are all z_i = 0 ? 
     if(k == 1 .and. abs(z(1)) < zero) then
