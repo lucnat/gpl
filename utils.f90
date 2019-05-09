@@ -8,26 +8,12 @@
 MODULE utils
   use globals
   implicit none
+
   ! logical :: print_enabled = .true.
   ! logical :: warnings_enabled = .true.
 
-  INTERFACE print_matrix
-    ! prints 2d array as matrix. For complex it takes absolutes
-    
-    SUBROUTINE print_integer_matrix(m) 
-      integer :: m(:,:)
-      integer :: s(2)
-    END SUBROUTINE print_integer_matrix
-
-  SUBROUTINE print_complex_matrix(m) 
-    complex :: m(:,:)
-    integer :: s(2)
-  END SUBROUTINE print_complex_matrix
-
-  END INTERFACE print_matrix
-
 CONTAINS
-
+  
   FUNCTION  get_condensed_m(z) result(m)
     ! returns condensed m where the ones not needed are filled with 0
     complex(kind=prec), intent(in) :: z(:)
@@ -101,6 +87,12 @@ CONTAINS
     complex(kind=prec) :: res(n)
     res = 0
   END FUNCTION zero_array
+  
+  RECURSIVE FUNCTION factorial(n) result(res)
+    integer, intent(in) :: n
+    integer :: res
+    res = merge(1,n*factorial(n-1),n==0)
+  END FUNCTION factorial
 
   FUNCTION shuffle_with_zero(a) result(res)
     ! rows of result are shuffles of a with 0
@@ -118,6 +110,15 @@ CONTAINS
     end do
   END FUNCTION shuffle_with_zero
 
+  SUBROUTINE print_matrix(m) 
+    complex(kind=prec) :: m(:,:)
+    integer :: s(2), i
+    s = shape(m)
+    do i = 1,s(1)
+      print*, abs(m(i,:))
+    end do
+  END SUBROUTINE print_matrix
+
   ! subroutine print(s1,s2,s3,s4,s5)
   !   character(len = *), intent(in), optional :: s1, s2, s3, s4, s5
   !   if(print_enabled) then
@@ -134,24 +135,6 @@ CONTAINS
 
 END MODULE utils
 
-
-SUBROUTINE print_integer_matrix(m) 
-  integer :: m(:,:)
-  integer :: s(2), i
-  s = shape(m)
-  do i = 1,s(1)
-    print*, m(i,:)
-  end do
-END SUBROUTINE print_integer_matrix
-
-SUBROUTINE print_complex_matrix(m) 
-  complex :: m(:,:)
-  integer :: s(2), i
-  s = shape(m)
-  do i = 1,s(1)
-    print*, abs(m(i,:))
-  end do
-END SUBROUTINE print_complex_matrix
 
 ! PROGRAM test
 !   use  utils
@@ -172,5 +155,4 @@ END SUBROUTINE print_complex_matrix
 !     condensed_size = find_first_zero(m_prime)-1 
 !   end if
 !   print*, condensed_size
-
 ! END  PROGRAM test
