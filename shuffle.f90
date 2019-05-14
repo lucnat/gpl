@@ -30,12 +30,6 @@ CONTAINS
     complex(kind=prec) :: res(product((/(i,i=1,size(v1)+size(v2))/))/  & 
       (product((/(i,i=1,size(v1))/))*product((/(i,i=1,size(v2))/))), & 
       size(v1) + size(v2))
-    complex(kind=prec) :: p1(product((/(i,i=1,size(v1)+size(v2)-1)/))/  & 
-      (product((/(i,i=1,size(v1)-1)/))*product((/(i,i=1,size(v2))/))), & 
-      size(v1) + size(v2) - 1)
-    complex(kind=prec) :: p2(product((/(i,i=1,size(v1)+size(v2)-1)/))/  & 
-      (product((/(i,i=1,size(v1))/))*product((/(i,i=1,size(v2)-1)/))), & 
-      size(v1) + size(v2) - 1)
     complex(kind=prec) :: alpha, beta, w1(size(v1)-1), w2(size(v2)-1)
 
     res = 0
