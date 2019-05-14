@@ -87,7 +87,7 @@ CONTAINS
     complex(kind=prec) :: res(n)
     res = 0
   END FUNCTION zero_array
-  
+
   RECURSIVE FUNCTION factorial(n) result(res)
     integer, intent(in) :: n
     integer :: res
@@ -137,6 +137,7 @@ END MODULE utils
 
 
 ! PROGRAM test
+!   use globals
 !   use  utils
 !   implicit none
   

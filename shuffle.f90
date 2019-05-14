@@ -60,18 +60,18 @@ CONTAINS
 
 END MODULE shuffle
 
-PROGRAM test
-  use utils
-  use shuffle
-  implicit none
+! PROGRAM test
+!   use utils
+!   use shuffle
+!   implicit none
 
-  complex(kind=prec) :: v1(3), v2(2)
-  integer :: amount_shuffles
+!   complex(kind=prec) :: v1(3), v2(2)
+!   integer :: amount_shuffles
 
-  v1 = cmplx((/1,2,3/))
-  v2 = cmplx((/4,5/))
+!   v1 = cmplx((/1,2,3/))
+!   v2 = cmplx((/4,5/))
 
-  call print_matrix(shuffle_product(v1,v2))
+!   call print_matrix(shuffle_product(v1,v2))
 
-END PROGRAM test
+! END PROGRAM test
 

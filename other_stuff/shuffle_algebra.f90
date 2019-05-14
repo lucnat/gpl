@@ -1,6 +1,9 @@
 
-! This is currently a stand alone program which will merely be used as a 
-! guide for the implementation of the shuffle algebra for GPL functions
+! An implementation of the shuffle algebra 
+! in accordance with 1904.07279v1, polylogs for the masses, p.7-8
+
+! This implementation defines words as strings of characters and shuffles them 
+! into sums of words. 
 
 PROGRAM shuffle_algebra
   implicit none

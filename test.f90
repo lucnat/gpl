@@ -102,8 +102,8 @@ CONTAINS
   end subroutine do_GPL_tests
 
   subroutine do_shuffle_tests() 
-    integer :: v(3) = (/1,2,3/)
-    integer :: w(2) = (/-1,-2/)
+    complex(kind=prec) :: v(3) = cmplx((/1,2/))
+    complex(kind=prec) :: w(2) = cmplx((/3,4/))
 
     call print_matrix(shuffle_product(v,w))
   end subroutine do_shuffle_tests

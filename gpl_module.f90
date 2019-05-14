@@ -7,12 +7,6 @@ MODULE gpl_module
 
 CONTAINS 
 
-  RECURSIVE FUNCTION factorial(n) result(res)
-    integer, intent(in) :: n
-    integer :: res
-    res = merge(1,n*factorial(n-1),n==0)
-  END FUNCTION factorial
-
   FUNCTION zeta(n) 
     real(kind=prec) :: values(9), zeta
     integer :: n
@@ -58,7 +52,6 @@ CONTAINS
       if(abs(z(i)) < zero) cycle  ! skip zero values
       if(abs(y) > abs(z(i))) is_convergent = .false.
     end do
-
   END FUNCTION is_convergent
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
