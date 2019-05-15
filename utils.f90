@@ -82,6 +82,20 @@ CONTAINS
     end do
   END FUNCTION find_first_zero
 
+  FUNCTION min_index(v)
+    ! returns the index of the smallest element in v
+    real(kind=prec) :: v(:), minimum
+    integer :: min_index, i
+    min_index = 1
+    minimum = v(1)
+    do i = 1,size(v)
+      if(v(i) < minimum) then
+        minimum = v(i)
+        min_index = i
+      end if
+    end do
+  END FUNCTION min_index
+
   FUNCTION zero_array(n) result(res)
     integer :: n
     complex(kind=prec) :: res(n)
@@ -93,6 +107,18 @@ CONTAINS
     integer :: res
     res = merge(1,n*factorial(n-1),n==0)
   END FUNCTION factorial
+
+  FUNCTION add_ieps(x) result(res)
+    ! adds small imaginary part to x
+    complex(kind=prec) :: x, res
+    res = x + (0.0,epsilon)
+  END FUNCTION add_ieps
+
+  FUNCTION sub_ieps(x) result(res)
+    ! subtracts small imaginary part to x
+    complex(kind=prec) :: x, res
+    res = x - (0.0,epsilon)
+  END FUNCTION sub_ieps
 
   FUNCTION shuffle_with_zero(a) result(res)
     ! rows of result are shuffles of a with 0
@@ -156,4 +182,6 @@ END MODULE utils
 !     condensed_size = find_first_zero(m_prime)-1 
 !   end if
 !   print*, condensed_size
+
+
 ! END  PROGRAM test

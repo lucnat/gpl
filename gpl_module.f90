@@ -43,6 +43,7 @@ CONTAINS
 
   FUNCTION is_convergent(z,y)
     ! returns true if G(z,y) convergent, otherwise false
+    ! can be used in either notation (flat or condensed)
     complex(kind=prec) :: z(:), y
     logical :: is_convergent
     integer :: i
@@ -54,6 +55,54 @@ CONTAINS
     end do
   END FUNCTION is_convergent
 
+  SUBROUTINE print_G(z_flat, y)
+    complex(kind=prec) :: z_flat(:), y
+    print*, 'G(', abs(z_flat), abs(y), ')'
+  END SUBROUTINE print_G
+
+  RECURSIVE FUNCTION pending_integral(p,i,g)  result(res)
+    ! reduces a pending integral given by 
+    !     p = (y1, b1, ..., br)
+    !     i = position of integration variable within g
+    !     g = arguments of G-function, without the variable that is integrated over
+    ! to a G function
+    complex(kind=prec) :: p(:), g(:), res, y2
+    integer :: i
+    res = 0
+    
+    ! is what we have a G-function?
+    if(size(g)+1  == i) then
+      res = G_flat( [p(2:size(p)), g], p(1) )
+      return
+    end if
+
+    ! case where we use (64)
+    if(size(g) == 1 .and. i == 1) then
+      y2 = g(1)
+      res = pending_integral(p,2,[sub_ieps(y2)]) - pending_integral(p,2,[cmplx(0.0)]) &
+        + G_flat(p(2:size(p)),p(1)) * log(-sub_ieps(y2))
+      return
+    end if
+
+  END FUNCTION pending_integral
+
+  FUNCTION reduce_to_convergent(a, y2) result(res)
+    complex(kind=prec) :: a(:), y2, res, s_r
+    integer :: min_i
+    min_i = min_index(abs(a))
+    s_r = a(min_i)
+    res = 0
+    ! case that minimum is at first place
+    if(min_i == 1) then
+      res = G_flat([cmplx(0.0), a(2:size(a))], y2)  ! first term of (64)
+      res = res + G_flat([y2], s_r) * G_flat(a(2:size(a)), y2)
+      res = res + pending_integral( [s_r, a(min_i+1)], min_i, [a(3:size(a)), y2] )
+      res = res + G_flat([a(min_i+1)],s_r) * G_flat(a(2:size(a)), y2)
+      return
+    end if
+
+  END FUNCTION  reduce_to_convergent
+
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
     complex(kind=prec) :: z_flat(:), y, res
@@ -61,12 +110,15 @@ CONTAINS
     integer :: m_prime(size(z_flat)), condensed_size, kminusj, j, k, i
     integer, allocatable :: m(:)
 
+    call print_G(z_flat,y)
+
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
       print*, 'need to make convergent'
-      res = 0
+      res = reduce_to_convergent(z_flat, y)
       return
     end if
+
     ! need remove trailing zeroes?
     k = size(z_flat)
     kminusj = find_amount_trailing_zeros(z_flat)
@@ -75,6 +127,7 @@ CONTAINS
       res = GPL_zero_zi(k,y)
       return
     else if(kminusj > 0) then
+      print*, 'need to remove trailing zeroes'
       allocate(s(j,j))
       s = shuffle_with_zero(z_flat(1:j-1))
       res = log(y)*G_flat(z_flat(1:size(z_flat)-1),y)
@@ -86,7 +139,8 @@ CONTAINS
       return
     end if
 
-    ! transform to condensed notation
+    ! thus it is convergent, and has no trailing zeros
+    ! -> evaluate in condensed notation -> which will give series representation
     m_prime = get_condensed_m(z_flat)
     if(find_first_zero(m_prime) == -1) then
       condensed_size = size(m_prime)
@@ -129,12 +183,7 @@ CONTAINS
 
     ! need make convergent?
     if(.not. GPL_has_convergent_series(m,z,y,k)) then
-      print*, 'need to make convergent'
-      if(k == 1 .and. m(1) == 1) then ! use (59)
-
-      else
-        print*, '  ', 'does not have convergent series representation'
-      end if
+      print*, 'shit does not converge, and we are in condensed notation, fuck that'
       res = 0
       return
     end if
@@ -142,7 +191,9 @@ CONTAINS
     do i = 1,k
       x(i) = merge(y/z(1), z(i-1)/z(i),i == 1)
     end do
-    print*, 'computed using MPL'
+    print*, 'computed using Li with '
+    print*, 'm = ', m
+    print*, 'x = ', x
     res = (-1)**k * MPL(m,x)
   END FUNCTION G_condensed
 
