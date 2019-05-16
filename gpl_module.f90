@@ -104,9 +104,17 @@ CONTAINS
 
     call print_G(z_flat,y)
 
+    ! only two arguments? -> we get a logarithm
+
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
       print*, 'need to make convergent'
+      if(size(z_flat) == 1) then
+        print*, 'we get simply a log'
+        res = log(y-z_flat(1)) - log(-z_flat(1))
+        return
+      end if
+
       res = reduce_to_convergent(z_flat, y)
       return
     end if

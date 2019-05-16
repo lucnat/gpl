@@ -18,7 +18,7 @@ PROGRAM TEST
   ! call do_GPL_tests()
   ! call do_shuffle_tests() ! put this somewhere else
 
-  res = G_flat(cmplx((/1.0,10.0/)),cmplx(2.0))
+  res = G_flat(cmplx((/1.0,3.0/)),cmplx(2.0))
   print*, res
 
   ! if(tests_successful) then
