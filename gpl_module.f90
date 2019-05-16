@@ -60,48 +60,40 @@ CONTAINS
     print*, 'G(', abs(z_flat), abs(y), ')'
   END SUBROUTINE print_G
 
-  RECURSIVE FUNCTION pending_integral(p,i,g)  result(res)
-    ! reduces a pending integral given by 
-    !     p = (y1, b1, ..., br)
-    !     i = position of integration variable within g
-    !     g = arguments of G-function, without the variable that is integrated over
-    ! to a G function
-    complex(kind=prec) :: p(:), g(:), res, y2
-    integer :: i
-    res = 0
-    
-    ! is what we have a G-function?
-    if(size(g)+1  == i) then
-      res = G_flat( [p(2:size(p)), g], p(1) )
-      return
-    end if
 
-    ! case where we use (64)
-    if(size(g) == 1 .and. i == 1) then
-      y2 = g(1)
-      res = pending_integral(p,2,[sub_ieps(y2)]) - pending_integral(p,2,[cmplx(0.0)]) &
-        + G_flat(p(2:size(p)),p(1)) * log(-sub_ieps(y2))
-      return
-    end if
+  RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
+  ! evaluates a pending integral by reducing it to simpler ones and g functions
+  complex(kind=prec) :: p(:), g(:), res
+  integer :: i
+
+  res = 0
+  if(i == size(g)+1) then
+    res = G_flat([p(2:size(p)),g], p(1))
+    return
+  end if
+
+  if(size(g) == 1) then
+    res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
+      + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
+  end if
 
   END FUNCTION pending_integral
 
-  FUNCTION reduce_to_convergent(a, y2) result(res)
-    complex(kind=prec) :: a(:), y2, res, s_r
-    integer :: min_i
-    min_i = min_index(abs(a))
-    s_r = a(min_i)
+  FUNCTION reduce_to_convergent(a,y2) result(res)
+    complex(kind=prec) :: a(:), y2, res, sr
+    integer :: i
     res = 0
-    ! case that minimum is at first place
-    if(min_i == 1) then
-      res = G_flat([cmplx(0.0), a(2:size(a))], y2)  ! first term of (64)
-      res = res + G_flat([y2], s_r) * G_flat(a(2:size(a)), y2)
-      res = res + pending_integral( [s_r, a(min_i+1)], min_i, [a(3:size(a)), y2] )
-      res = res + G_flat([a(min_i+1)],s_r) * G_flat(a(2:size(a)), y2)
+    i = min_index(abs(a))
+    sr = a(i)
+    if(i == 1) then
+      res = G_flat([cmplx(0), a(i+1:size(a))], y2) &
+        + G_flat([y2], sr) * G_flat(a(i+1:size(a)), y2) &
+        + pending_integral([sr, a(i+1)], i, [a(i+2:size(a)), y2]) &
+        - G_flat([a(i+1)], sr) * G_flat(a(i+1:size(a)), y2)
       return
     end if
 
-  END FUNCTION  reduce_to_convergent
+  END FUNCTION reduce_to_convergent
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
@@ -154,7 +146,7 @@ CONTAINS
     res = G_condensed(m,z,y,size(m))
     deallocate(m)
     deallocate(z)
-  END  FUNCTION G_flat
+  END FUNCTION G_flat
 
   RECURSIVE FUNCTION G_condensed(m,z,y,k) result(res)
     ! computes the generalized polylogarithm G_{m1,..mk} (z1,...zk; y)
