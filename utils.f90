@@ -15,7 +15,7 @@ MODULE utils
 CONTAINS
   
   FUNCTION  get_condensed_m(z) result(m)
-    ! returns condensed m where the ones not needed are filled with 0
+    ! returns condensed m where the ones not needed are filled with 0 (returns same size as z)
     complex(kind=prec), intent(in) :: z(:)
     integer :: m(size(z)), pos, i 
     m = 1
@@ -87,9 +87,9 @@ CONTAINS
     real(kind=prec) :: v(:), minimum
     integer :: min_index, i
     min_index = 1
-    minimum = v(1)
+    minimum = 1e15
     do i = 1,size(v)
-      if(v(i) < minimum) then
+      if(v(i) < minimum .and. v(i) > zero) then
         minimum = v(i)
         min_index = i
       end if

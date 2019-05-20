@@ -10,6 +10,7 @@ CONTAINS
   FUNCTION zeta(n) 
     real(kind=prec) :: values(9), zeta
     integer :: n
+    if(n == 1) print*, 'WARNING: zeta(1) divergent'
     values = (/1.6449340668482262, 1.2020569031595942, 1.0823232337111381, &
                1.03692775514337, 1.0173430619844488, 1.008349277381923, & 
                1.0040773561979441, 1.0020083928260821, 1.000994575127818/)
@@ -72,9 +73,11 @@ CONTAINS
     return
   end if
 
+  ! if depth one and m = 1
   if(size(g) == 1) then
     res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
       + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
+    return
   end if
 
   END FUNCTION pending_integral
@@ -82,10 +85,12 @@ CONTAINS
   FUNCTION reduce_to_convergent(a,y2) result(res)
     complex(kind=prec) :: a(:), y2, res, sr
     integer :: i
+
     res = 0
     i = min_index(abs(a))
     sr = a(i)
     if(i == 1) then
+      print*, 's_r at at first place'
       res = G_flat([cmplx(0), a(i+1:size(a))], y2) &
         + G_flat([y2], sr) * G_flat(a(i+1:size(a)), y2) &
         + pending_integral([sr, a(i+1)], i, [a(i+2:size(a)), y2]) &
@@ -93,25 +98,41 @@ CONTAINS
       return
     end if
 
+
   END FUNCTION reduce_to_convergent
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
     complex(kind=prec) :: z_flat(:), y, res
     complex(kind=prec), allocatable :: z(:), s(:,:)
-    integer :: m_prime(size(z_flat)), condensed_size, kminusj, j, k, i
+    integer :: m_prime(size(z_flat)), condensed_size, kminusj, j, k, i, m_1
     integer, allocatable :: m(:)
+    logical :: is_depth_one
 
     call print_G(z_flat,y)
 
-    ! only two arguments? -> we get a logarithm
-
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
+      
       print*, 'need to make convergent'
-      if(size(z_flat) == 1) then
-        print*, 'we get simply a log'
-        res = log(y-z_flat(1)) - log(-z_flat(1))
+
+      m_prime = get_condensed_m(z_flat)
+      m_1 = m_prime(1)
+      is_depth_one = (count((m_prime>0)) == 1)
+      if(is_depth_one) then
+        ! case m = 1
+        if(size(z_flat) == 1) then
+          print*, 'case m = 1'
+          res = log(y-z_flat(1)) - log(-z_flat(1))
+          return
+        end if
+
+        ! case m >= 2
+        print*, 'case m > 1'
+        print*, 'm = ', m_1
+        res = -zeta(m_1) & 
+          + pending_integral([y, cmplx(0.0)], m_1-1, [zero_array(m_1-2), y]) &
+          - pending_integral([z_flat(m_1), cmplx(0.0)], m_1-1, [zero_array(m_1-2), y])
         return
       end if
 
@@ -191,9 +212,9 @@ CONTAINS
     do i = 1,k
       x(i) = merge(y/z(1), z(i-1)/z(i),i == 1)
     end do
-    print*, 'computed using Li with '
-    print*, 'm = ', m
-    print*, 'x = ', x
+    ! print*, 'computed using Li with '
+    ! print*, 'm = ', m
+    ! print*, 'x = ', x
     res = (-1)**k * MPL(m,x)
   END FUNCTION G_condensed
 

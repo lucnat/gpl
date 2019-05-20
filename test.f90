@@ -13,13 +13,19 @@ PROGRAM TEST
   complex(kind=prec) :: res 
   real, parameter :: tol = 1.0e-14
   logical :: tests_successful = .true. 
+  integer :: i
 
   ! call do_MPL_tests() 
   ! call do_GPL_tests()
   ! call do_shuffle_tests() ! put this somewhere else
 
-  res = G_flat(cmplx((/1.0,3.0/)),cmplx(2.0))
-  print*, res
+  ! res = G_flat(cmplx((/0.0,10.0/)),cmplx(20.0))
+  ! print*, res
+
+  do i = 1,8
+    res = zeta(i)
+    print*, 'zeta(',i,') =', res
+  end do
 
   ! if(tests_successful) then
   !   print*, 'All tests passed. '
