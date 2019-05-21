@@ -17,7 +17,7 @@ CONTAINS
     j = (/(i, i=1,n,1)/) 
     res = sum(x**j / j**m)
   END FUNCTION naive_polylog
-  
+
   FUNCTION Li2(x)
 
    !! Dilogarithm for arguments x < = 1.0
@@ -108,21 +108,22 @@ CONTAINS
          ! Artificial conversion           
    Li2 = Real(LI2_OLD,prec)
   END FUNCTION Li2
-  
+
   FUNCTION dilog_in_unit_circle(x) result(res)
     ! evaluates for any argument x in unit circle
     complex(kind=prec) :: x, res
     res = naive_polylog(2,x)
   END FUNCTION dilog_in_unit_circle
-  
+
   FUNCTION dilog(x) result(res)
     ! evaluates dilog for any argument
     complex(kind=prec) :: res
     complex(kind=prec) :: x
+
     if(abs(x) <= 1.0) then
      res = naive_polylog(2,x)
     else
-     res = -dilog_in_unit_circle(1/x) - pi**2/6 - log(dcmplx(   add_ieps(-x)  ))**2 / 2
+     res = -dilog_in_unit_circle(1/x) - pi**2/6 - log(add_ieps(-x))**2 / 2
    end if
   END FUNCTION dilog
 
@@ -229,7 +230,20 @@ CONTAINS
     ENDDO
     Li3 = A + S * (  (BA0 - HA*BA2) + (BB0 - HB*BB2) )
   END FUNCTION Li3
-  
+
+  FUNCTION trilog(x) result(res)
+    ! evaluates trilog for any argument
+    complex(kind=prec) :: res
+    complex(kind=prec) :: x
+    print*, 'called trilog'
+
+    if(abs(x) <= 1.0) then
+     res = naive_polylog(3,x)
+    else
+     res = naive_polylog(3,sub_ieps(x)**(-1)) - (log(-sub_ieps(x)))**3/6 - pi**2/6 * log(-sub_ieps(x))
+   end if
+  END FUNCTION trilog
+
   FUNCTION polylog(m,x) result(res)
     ! computes the polylog for now naively (except for dilog half-naively)
     integer :: m
@@ -237,18 +251,20 @@ CONTAINS
     print*, 'called polylog(',m,',',x,')'
     if(m == 2) then
       res = dilog(x)
-    else 
+    else if(m == 3) then
+      res = trilog(x)
+    else
       res = naive_polylog(m,x)
     end if
   END FUNCTION polylog
-  
+
 END MODULE maths_functions
 
-PROGRAM test
-  use maths_functions
-  implicit none
-  complex(kind=prec) :: res
-  res = Li3(0.4d0)
-  print*, res
-END PROGRAM test
+! PROGRAM test
+!   use maths_functions
+!   implicit none
+!   complex(kind=prec) :: res
+!   res = Li3(0.4d0)
+!   print*, res
+! END PROGRAM test
 
