@@ -3,6 +3,7 @@ MODULE gpl_module
   use globals
   use utils
   use maths_functions
+  use shuffle
   use mpl_module
   implicit none
 
@@ -83,14 +84,30 @@ CONTAINS
 
   END FUNCTION pending_integral
 
+  FUNCTION remove_sr_from_last_place(a,y2,m,sr) result(res)
+    complex(kind=prec) :: a(:), sr, res,y2
+    integer :: m,i,j
+    complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+m)/))/  & 
+      (product((/(i,i=1,size(a))/))*product((/(i,i=1,m)/))), & 
+      size(a) + m)
+    alpha = shuffle_product(a,[zero_array(m-1),sr])
+    res = G_flat(a,y2)*G_flat([zero_array(m-1),sr],y2)
+    do j = 2,size(alpha,1)
+      res = res - G_flat(alpha(j,:),y2)
+    end do
+
+  END FUNCTION remove_sr_from_last_place
+
   FUNCTION reduce_to_convergent(a,y2) result(res)
     complex(kind=prec) :: a(:), y2, res, sr
-    integer :: i
+
+    integer :: i, mminus1
 
     res = 0
     i = min_index(abs(a))
     sr = a(i)
     if(i == 1) then
+      !s_r at beginning, use (68)
       print*, 's_r at at first place'
       res = G_flat([cmplx(0), a(i+1:size(a))], y2) &
         + G_flat([y2], sr) * G_flat(a(i+1:size(a)), y2) &
@@ -98,6 +115,23 @@ CONTAINS
         - G_flat([a(i+1)], sr) * G_flat(a(i+1:size(a)), y2)
       return
     end if
+
+    if(i == size(a)) then
+      ! sr at the end, thus shuffle
+      print*, 's_r at the end'
+      mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
+      res = remove_sr_from_last_place(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
+      return
+    end if
+
+    ! thus s_r in middle, use (67)
+    print*, 's_r in the middle'
+    res = G_flat([a(1:i-1),cmplx(0),a(i+1:size(a))],y2) &
+      - pending_integral([sr,a(i-1)], i-1, [a(1:i-2),a(i+1:size(a)),y2])  &
+      + G_flat([a(i-1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        &
+      + pending_integral([sr,a(i+1)], i, [a(1:i-1),a(i+2:size(a)),y2])    &
+      - G_flat([a(i+1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        
+
   END FUNCTION reduce_to_convergent
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
@@ -110,7 +144,13 @@ CONTAINS
 
     call print_G(z_flat,y)
 
+
     ! is just a logarithm? 
+    if(all(abs(z_flat) < zero)) then
+      print*, 'all z are zero'
+      res = log(y)**size(z_flat) / factorial(size(z_flat))
+      return
+    end if
     if(size(z_flat) == 1) then
       print*, 'is just a logarithm'
       if(abs(z_flat(1)) <= zero) then 
@@ -132,13 +172,6 @@ CONTAINS
       return
     end if
 
-    ! need make convergent?
-    if(.not. is_convergent(z_flat,y)) then
-      print*, 'need to make convergent'
-      res = reduce_to_convergent(z_flat, y)
-      return
-    end if
-
     ! need remove trailing zeroes?
     k = size(z_flat)
     kminusj = find_amount_trailing_zeros(z_flat)
@@ -156,6 +189,13 @@ CONTAINS
       end do
       res = res / kminusj
       deallocate(s)
+      return
+    end if
+
+    ! need make convergent?
+    if(.not. is_convergent(z_flat,y)) then
+      print*, 'need to make convergent'
+      res = reduce_to_convergent(z_flat, y)
       return
     end if
 

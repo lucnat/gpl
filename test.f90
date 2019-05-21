@@ -20,7 +20,7 @@ PROGRAM TEST
   ! call do_GPL_tests()
   ! call do_shuffle_tests() ! put this somewhere else
 
-  res = G_flat(cmplx((/0.0,0.0,10.0/)),cmplx(2.0))
+  res = G_flat(cmplx((/2,1/)),cmplx(3))
   print*, res
 
 
