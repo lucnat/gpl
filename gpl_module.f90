@@ -258,5 +258,3 @@ CONTAINS
   END FUNCTION G_condensed
 
 END MODULE gpl_module
-
-
