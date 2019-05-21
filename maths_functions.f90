@@ -4,12 +4,6 @@ MODULE maths_functions
   use utils
   implicit none
 
-  ! integer, parameter :: prec = selected_real_kind(15,32)  
-  ! integer, parameter :: GPLInfinity = 30              ! the default outermost expansion order for MPLs
-  ! real(kind=prec), parameter :: epsilon = 1e-15       ! used for the small imaginary part
-  ! real(kind=prec), parameter :: zero = 1e-15          ! values smaller than this count as zero
-  ! real(kind=prec), parameter :: pi = 3.14159265358979323846_prec
-
 CONTAINS 
 
   FUNCTION naive_polylog(m,x,n_passed) result(res)
@@ -23,7 +17,7 @@ CONTAINS
     j = (/(i, i=1,n,1)/) 
     res = sum(x**j / j**m)
   END FUNCTION naive_polylog
-
+  
   FUNCTION Li2(x)
 
    !! Dilogarithm for arguments x < = 1.0
@@ -113,15 +107,14 @@ CONTAINS
    LI2_OLD=-(S*(B0-H*B2)+A)
          ! Artificial conversion           
    Li2 = Real(LI2_OLD,prec)
-
   END FUNCTION Li2
-
+  
   FUNCTION dilog_in_unit_circle(x) result(res)
     ! evaluates for any argument x in unit circle
     complex(kind=prec) :: x, res
     res = naive_polylog(2,x)
   END FUNCTION dilog_in_unit_circle
-
+  
   FUNCTION dilog(x) result(res)
     ! evaluates dilog for any argument
     complex(kind=prec) :: res
@@ -133,6 +126,110 @@ CONTAINS
    end if
   END FUNCTION dilog
 
+  FUNCTION Li3(x)
+    ! Trilogarithm for arguments x < = 1.0
+    ! This was hacked from LI2 to also follow C332
+    ! In theory this could also produce Re[Li [x]] for x>1
+
+    real (kind=prec):: X,S,A
+    real (kind=prec):: CA(0:18),HA,ALFAA,BA0,BA1,BA2, YA
+    real (kind=prec):: CB(0:18),HB,ALFAB,BB0,BB1,BB2, YB
+    DATA CA(0) / 0.4617293928601208/
+    DATA CA(1) / 0.4501739958855029/
+    DATA CA(2) / -0.010912841952292843/
+    DATA CA(3) / 0.0005932454712725702/
+    DATA CA(4) / -0.00004479593219266303/
+    DATA CA(5) / 4.051545785869334e-6/
+    DATA CA(6) / -4.1095398602619446e-7/
+    DATA CA(7) / 4.513178777974119e-8/
+    DATA CA(8) / -5.254661564861129e-9/
+    DATA CA(9) / 6.398255691618666e-10/
+    DATA CA(10) / -8.071938105510391e-11/
+    DATA CA(11) / 1.0480864927082917e-11/
+    DATA CA(12) / -1.3936328400075057e-12/
+    DATA CA(13) / 1.8919788723690422e-13/
+    DATA CA(14) / -2.6097139622039465e-14/
+    DATA CA(15) / 3.774985548158685e-15/
+    DATA CA(16) / -5.671361978114946e-16/
+    DATA CA(17) / 1.1023848202712794e-16/
+    DATA CA(18) / -5.0940525990875006e-17/
+    DATA CB(0) / -0.016016180449195803/
+    DATA CB(1) / -0.5036424400753012/
+    DATA CB(2) / -0.016150992430500253/
+    DATA CB(3) / -0.0012440242104245127/
+    DATA CB(4) / -0.00013757218124463538/
+    DATA CB(5) / -0.000018563818526041144/
+    DATA CB(6) / -2.841735345177361e-6/
+    DATA CB(7) / -4.7459967908588557e-7/
+    DATA CB(8) / -8.448038544563037e-8/
+    DATA CB(9) / -1.5787671270014e-8/
+    DATA CB(10) / -3.0657620579122164e-9/
+    DATA CB(11) / -6.140791949281482e-10/
+    DATA CB(12) / -1.2618831590198e-10/
+    DATA CB(13) / -2.64931268635803e-11/
+    DATA CB(14) / -5.664711482422879e-12/
+    DATA CB(15) / -1.2303909436235178e-12/
+    DATA CB(16) / -2.7089360852246495e-13/
+    DATA CB(17) / -6.024075373994343e-14/
+    DATA CB(18) / -1.2894320641440237e-14/
+    real (kind=prec):: Li3
+    real (kind=prec), parameter :: zeta2 = 1.6449340668482264365
+    real (kind=prec), parameter :: zeta3 = 1.2020569031595942854
+    integer :: i
+
+
+    if(x > 1.00000000001_prec) then
+      print*, 'need to crash Li3, since not convergent'
+    elseif(x > 1.0_prec) then
+      x = 1._prec
+    endif
+
+    IF(X > 0.999999_prec) THEN
+      LI3=zeta3
+    RETURN
+    ELSE IF(X .EQ. -1._prec) THEN
+      LI3=-0.75_prec*zeta3
+    RETURN
+    END IF
+    IF(X .LE. -1._prec) THEN
+      YA=1._prec/x ; YB=0._prec
+      S=-1._prec
+      A=-LOG(-X)*(zeta2+LOG(-x)**2/6._prec)
+    ELSE IF(X .LE. 0._prec) THEN
+      YA=x ; YB=0._prec
+      S=-1._prec
+      A=0._prec
+    ELSE IF(X .LE. 0.5_prec) THEN
+      YA=0._prec ; YB=x
+      S=-1._prec
+      A=0._prec
+    ELSE IF(X .LE. 1._prec) THEN
+      YA=(x-1._prec)/x ; YB=1._prec-x
+      S=1._prec
+      A=zeta3 + zeta2*Log(x) - (Log(1._prec - X)*Log(X)**2)/2._prec + Log(X)**3/6._prec
+    ELSE IF(X .LE. 2._prec) THEN
+      YA=1._prec - X ; YB=(X-1._prec)/X
+      S=1._prec
+      A=zeta3 + zeta2*Log(x) - (Log(X - 1._prec)*Log(X)**2)/2._prec + Log(X)**3/6._prec
+    ELSE
+      YA=0._prec ; YB=1._prec/X
+      S=-1._prec
+      A=2*zeta2*Log(x)-Log(x)**3/6._prec
+    END IF
+
+
+    HA=-2._prec*YA-1._prec ; HB= 2._prec*YB
+    ALFAA=HA+HA ; ALFAB = HB+HB
+
+    BA0 = 0. ; BA1=0. ; BA2=0.
+    BB0 = 0. ; BB1=0. ; BB2=0.
+    DO  I = 18,0,-1
+       BA0=CA(I)+ALFAA*BA1-BA2 ; BA2=BA1 ; BA1=BA0
+       BB0=CB(I)+ALFAB*BB1-BB2 ; BB2=BB1 ; BB1=BB0
+    ENDDO
+    Li3 = A + S * (  (BA0 - HA*BA2) + (BB0 - HB*BB2) )
+  END FUNCTION Li3
+  
   FUNCTION polylog(m,x) result(res)
     ! computes the polylog for now naively (except for dilog half-naively)
     integer :: m
@@ -144,14 +241,14 @@ CONTAINS
       res = naive_polylog(m,x)
     end if
   END FUNCTION polylog
-
+  
 END MODULE maths_functions
 
-! PROGRAM test
-!   use maths_functions
-!   implicit none
-!   complex(kind=prec) :: res
-!   res = dilog(dcmplx(0.4d0))
-!   print*, res
-! END PROGRAM test
+PROGRAM test
+  use maths_functions
+  implicit none
+  complex(kind=prec) :: res
+  res = Li3(0.4d0)
+  print*, res
+END PROGRAM test
 
