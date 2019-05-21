@@ -6,27 +6,17 @@ MODULE mpl_module
 
 CONTAINS 
 
-  FUNCTION dilog(x,n)
-    ! Computes the dilog Li_2(x) using the series representation up to order n
-    integer :: n
-    complex(kind=prec) :: x, dilog
-    integer :: i
-    integer :: j(n)
-
-    j = (/(i, i=1,n,1)/) 
-    dilog = sum(x**j / j**2)
-  END FUNCTION dilog
-
-  FUNCTION polylog(m,x,n)
+  FUNCTION polylog_series(m,x,n_passed) result(res)
     ! Computes the classical polylogarithm Li_m(x) using series representation up to order n
     integer :: m
-    complex(kind=prec) :: x, polylog
+    integer, optional :: n_passed
+    complex(kind=prec) :: x, res
     integer :: i,n
     integer, allocatable :: j(:)
-
+    n = merge(n_passed,GPLInfinity,present(n_passed))  
     j = (/(i, i=1,n,1)/) 
-    polylog = sum(x**j / j**m)
-  END FUNCTION polylog
+    res = sum(x**j / j**m)
+  END FUNCTION polylog_series
 
   FUNCTION MPL_converges(m,x)
     ! checks if the MPL converges 
@@ -57,7 +47,7 @@ CONTAINS
     
     if(size(m) == 1) then
       ! base case
-      res = polylog(m(1),x(1), n)
+      res = polylog_series(m(1),x(1), n)
     else 
       ! recursion step
       res = 0

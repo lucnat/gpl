@@ -2,6 +2,7 @@
 MODULE gpl_module
   use globals
   use utils
+  use maths_functions
   use mpl_module
   implicit none
 
@@ -63,22 +64,22 @@ CONTAINS
 
 
   RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
-  ! evaluates a pending integral by reducing it to simpler ones and g functions
-  complex(kind=prec) :: p(:), g(:), res
-  integer :: i
+    ! evaluates a pending integral by reducing it to simpler ones and g functions
+    complex(kind=prec) :: p(:), g(:), res
+    integer :: i
 
-  res = 0
-  if(i == size(g)+1) then
-    res = G_flat([p(2:size(p)),g], p(1))
-    return
-  end if
+    res = 0
+    if(i == size(g)+1) then
+      res = G_flat([p(2:size(p)),g], p(1))
+      return
+    end if
 
-  ! if depth one and m = 1
-  if(size(g) == 1) then
-    res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
-      + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
-    return
-  end if
+    ! if depth one and m = 1
+    if(size(g) == 1) then
+      res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
+        + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
+      return
+    end if
 
   END FUNCTION pending_integral
 
@@ -97,8 +98,6 @@ CONTAINS
         - G_flat([a(i+1)], sr) * G_flat(a(i+1:size(a)), y2)
       return
     end if
-
-
   END FUNCTION reduce_to_convergent
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
@@ -111,31 +110,31 @@ CONTAINS
 
     call print_G(z_flat,y)
 
+    ! is just a logarithm? 
+    if(size(z_flat) == 1) then
+      print*, 'is just a logarithm'
+      if(abs(z_flat(1)) <= zero) then 
+        res = log(y)
+        return 
+      end if
+      res = log((z_flat(1) - y)/z_flat(1))
+      return
+    end if
+
+    ! is it a polylog? 
+    m_prime = get_condensed_m(z_flat)
+    m_1 = m_prime(1)
+    is_depth_one = (count((m_prime>0)) == 1)
+    if(is_depth_one) then
+      ! case m >= 2, other already handled above
+      print*, 'is just a polylog'
+      res = -polylog(m_1,y/z_flat(m_1))
+      return
+    end if
+
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
-      
       print*, 'need to make convergent'
-
-      m_prime = get_condensed_m(z_flat)
-      m_1 = m_prime(1)
-      is_depth_one = (count((m_prime>0)) == 1)
-      if(is_depth_one) then
-        ! case m = 1
-        if(size(z_flat) == 1) then
-          print*, 'case m = 1'
-          res = log(y-z_flat(1)) - log(-z_flat(1))
-          return
-        end if
-
-        ! case m >= 2
-        print*, 'case m > 1'
-        print*, 'm = ', m_1
-        res = -zeta(m_1) & 
-          + pending_integral([y, cmplx(0.0)], m_1-1, [zero_array(m_1-2), y]) &
-          - pending_integral([z_flat(m_1), cmplx(0.0)], m_1-1, [zero_array(m_1-2), y])
-        return
-      end if
-
       res = reduce_to_convergent(z_flat, y)
       return
     end if

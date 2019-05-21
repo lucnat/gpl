@@ -6,6 +6,7 @@ PROGRAM TEST
   use globals
   use utils
   use shuffle
+  use maths_functions
   use mpl_module
   use gpl_module
   implicit none
@@ -19,13 +20,12 @@ PROGRAM TEST
   ! call do_GPL_tests()
   ! call do_shuffle_tests() ! put this somewhere else
 
-  ! res = G_flat(cmplx((/0.0,10.0/)),cmplx(20.0))
-  ! print*, res
+  res = G_flat(cmplx((/0.0,1.0/)),cmplx(2.0))
+  print*, res
 
-  do i = 1,8
-    res = zeta(i)
-    print*, 'zeta(',i,') =', res
-  end do
+  ! res = polylog(2,cmplx(2.0))
+  ! print*, log((-2.0,-0.0000000000000001))
+  ! print*, log(add_ieps((-2.0,-0.0000000000000001)))
 
   ! if(tests_successful) then
   !   print*, 'All tests passed. '
