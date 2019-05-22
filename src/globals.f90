@@ -8,7 +8,7 @@ MODULE globals
   real, parameter :: zero = 1e-15          ! values smaller than this count as zero
   real, parameter :: pi = 3.14159265358979323846
 
-  integer :: verbosity = 0
+  integer :: verb = 0
 
 CONTAINS 
 
@@ -23,7 +23,7 @@ CONTAINS
       ! parse verbosity
       if(trim(arg) == '-verb') then
         call get_command_argument(i+1,arg)
-        read(arg,*) verbosity               ! str to int
+        read(arg,*) verb               ! str to int
       end if
 
       i = i+1
