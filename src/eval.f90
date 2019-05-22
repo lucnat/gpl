@@ -8,7 +8,7 @@ PROGRAM eval
 
   call parse_cmd_args()
 
-  res = GPL(cmplx([1.0,-0.618034,2.9]))
+  res = GPL(cmplx([1,2,3]))
   print*, res
   
 END PROGRAM eval
