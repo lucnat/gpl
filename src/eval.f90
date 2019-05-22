@@ -1,4 +1,4 @@
-
+ 
 PROGRAM eval
   use globals
   use gpl_module
@@ -7,8 +7,8 @@ PROGRAM eval
   complex(kind=prec) :: res 
 
   call parse_cmd_args()
-  print*, verb
-  res = GPL(cmplx([1,2,5]))
+
+  res = GPL(cmplx([1.0,-0.618034,0.1]))
   print*, res
   
 END PROGRAM eval
