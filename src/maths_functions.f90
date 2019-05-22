@@ -235,7 +235,6 @@ CONTAINS
     ! evaluates trilog for any argument
     complex(kind=prec) :: res
     complex(kind=prec) :: x
-    print*, 'called trilog'
 
     if(abs(x) <= 1.0) then
      res = naive_polylog(3,x)
@@ -248,7 +247,7 @@ CONTAINS
     ! computes the polylog for now naively (except for dilog half-naively)
     integer :: m
     complex(kind=prec) :: x,res
-    print*, 'called polylog(',m,',',x,')'
+    if(verb >= 70) print*, 'called polylog(',m,',',x,')'
     if(m == 2) then
       res = dilog(x)
     else if(m == 3) then

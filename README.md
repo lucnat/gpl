@@ -22,3 +22,9 @@ Before running it is advised to run the tests
 ```$ make test```
 
 ```$ ./test ```
+
+## verbosity legend
+10 tell if we need to make convergent
+30 give some details about how it is made convergent
+50 print whenever G(...) is called
+70 print on what polylogs it is reduced

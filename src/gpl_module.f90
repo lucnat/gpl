@@ -16,7 +16,6 @@ CONTAINS
   FUNCTION zeta(n) 
     real(kind=prec) :: values(9), zeta
     integer :: n
-    if(n == 1) print*, 'WARNING: zeta(1) divergent'
     values = (/1.6449340668482262, 1.2020569031595942, 1.0823232337111381, &
                1.03692775514337, 1.0173430619844488, 1.008349277381923, & 
                1.0040773561979441, 1.0020083928260821, 1.000994575127818/)
@@ -44,7 +43,6 @@ CONTAINS
     ! used to compute the value of GPL when all zi are zero
     integer :: l
     complex(kind=prec) :: y, GPL_zero_zi
-    print*, 'computed value using zi = 0'
     GPL_zero_zi = 1.0d0/factorial(l) * log(y) ** l
   END FUNCTION GPL_zero_zi
 
@@ -64,7 +62,7 @@ CONTAINS
 
   SUBROUTINE print_G(z_flat, y)
     complex(kind=prec) :: z_flat(:), y
-    print*, 'G(', abs(z_flat), abs(y), ')'
+    if(verb >= 50) print*, 'G(', abs(z_flat), abs(y), ')'
   END SUBROUTINE print_G
 
   RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
@@ -109,7 +107,7 @@ CONTAINS
     sr = a(i)
     if(i == 1) then
       !s_r at beginning, use (68)
-      print*, 's_r at at first place'
+      if(verb >= 30) print*, 's_r at at first place'
       res = G_flat([cmplx(0), a(i+1:size(a))], y2) &
         + G_flat([y2], sr) * G_flat(a(i+1:size(a)), y2) &
         + pending_integral([sr, a(i+1)], i, [a(i+2:size(a)), y2]) &
@@ -119,14 +117,14 @@ CONTAINS
 
     if(i == size(a)) then
       ! sr at the end, thus shuffle
-      print*, 's_r at the end'
+      if(verb >= 30) print*, 's_r at the end'
       mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
       res = remove_sr_from_last_place(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
       return
     end if
 
     ! thus s_r in middle, use (67)
-    print*, 's_r in the middle'
+    if(verb >= 30) print*, 's_r in the middle'
     res = G_flat([a(1:i-1),cmplx(0),a(i+1:size(a))],y2) &
       - pending_integral([sr,a(i-1)], i-1, [a(1:i-2),a(i+1:size(a)),y2])  &
       + G_flat([a(i-1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        &
@@ -147,12 +145,12 @@ CONTAINS
 
     ! is just a logarithm? 
     if(all(abs(z_flat) < zero)) then
-      print*, 'all z are zero'
+      if(verb > 70) print*, 'all z are zero'
       res = log(y)**size(z_flat) / factorial(size(z_flat))
       return
     end if
     if(size(z_flat) == 1) then
-      print*, 'is just a logarithm'
+      if(verb > 70) print*, 'is just a logarithm'
       if(abs(z_flat(1)) <= zero) then 
         res = log(y)
         return 
@@ -167,7 +165,7 @@ CONTAINS
     is_depth_one = (count((m_prime>0)) == 1)
     if(is_depth_one) then
       ! case m >= 2, other already handled above
-      print*, 'is just a polylog'
+      if(verb >= 70) print*, 'is just a polylog'
       res = -polylog(m_1,y/z_flat(m_1))
       return
     end if
@@ -180,7 +178,7 @@ CONTAINS
       res = GPL_zero_zi(k,y)
       return
     else if(kminusj > 0) then
-      print*, 'need to remove trailing zeroes'
+      if(verb >= 30) print*, 'need to remove trailing zeroes'
       allocate(s(j,j))
       s = shuffle_with_zero(z_flat(1:j-1))
       res = log(y)*G_flat(z_flat(1:size(z_flat)-1),y)
@@ -194,7 +192,7 @@ CONTAINS
 
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
-      print*, 'need to make convergent'
+      if(verb >= 10) print*, 'need to make convergent'
       res = reduce_to_convergent(z_flat, y)
       return
     end if
@@ -250,7 +248,6 @@ CONTAINS
 
     ! need make convergent?
     if(.not. GPL_has_convergent_series(m,z,y,k)) then
-      print*, 'shit does not converge, and we are in condensed notation, call in flat'
       z_flat = get_flattened_z(m,z)
       res = G_flat(z_flat,y)
       return
