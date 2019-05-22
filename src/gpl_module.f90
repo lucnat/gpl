@@ -7,6 +7,10 @@ MODULE gpl_module
   use mpl_module
   implicit none
 
+  INTERFACE GPL
+    module procedure G_flat, G_superflat, G_condensed
+  END INTERFACE GPL
+
 CONTAINS 
 
   FUNCTION zeta(n) 
@@ -63,7 +67,6 @@ CONTAINS
     print*, 'G(', abs(z_flat), abs(y), ')'
   END SUBROUTINE print_G
 
-
   RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
     ! evaluates a pending integral by reducing it to simpler ones and g functions
     complex(kind=prec) :: p(:), g(:), res
@@ -81,7 +84,6 @@ CONTAINS
         + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       return
     end if
-
   END FUNCTION pending_integral
 
   FUNCTION remove_sr_from_last_place(a,y2,m,sr) result(res)
@@ -95,7 +97,6 @@ CONTAINS
     do j = 2,size(alpha,1)
       res = res - G_flat(alpha(j,:),y2)
     end do
-
   END FUNCTION remove_sr_from_last_place
 
   FUNCTION reduce_to_convergent(a,y2) result(res)
@@ -131,7 +132,6 @@ CONTAINS
       + G_flat([a(i-1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        &
       + pending_integral([sr,a(i+1)], i, [a(1:i-1),a(i+2:size(a)),y2])    &
       - G_flat([a(i+1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        
-
   END FUNCTION reduce_to_convergent
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
@@ -216,6 +216,12 @@ CONTAINS
     deallocate(z)
   END FUNCTION G_flat
 
+  FUNCTION G_superflat(g) result(res)
+    ! simpler notation for flat evaluation
+    complex(kind=prec) :: g(:), res
+    res = G_flat(g(1:size(g)-1), g(size(g)))
+  END FUNCTION G_superflat
+
   RECURSIVE FUNCTION G_condensed(m,z,y,k) result(res)
     ! computes the generalized polylogarithm G_{m1,..mk} (z1,...zk; y)
     ! assumes zero arguments expressed through the m's
@@ -239,12 +245,14 @@ CONTAINS
       ! we remove them in flat form
       z_flat = get_flattened_z(m,z)
       res = G_flat(z_flat,y)
+      return
     end  if
 
     ! need make convergent?
     if(.not. GPL_has_convergent_series(m,z,y,k)) then
-      print*, 'shit does not converge, and we are in condensed notation, fuck that'
-      res = 0
+      print*, 'shit does not converge, and we are in condensed notation, call in flat'
+      z_flat = get_flattened_z(m,z)
+      res = G_flat(z_flat,y)
       return
     end if
 
