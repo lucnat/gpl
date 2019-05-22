@@ -6,7 +6,7 @@ PROGRAM eval
   
   complex(kind=prec) :: res 
 
-  print*, verbosity
+  call parse_cmd_args()
 
   res = GPL(cmplx([1,2,5]))
   print*, res
