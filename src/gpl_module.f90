@@ -8,7 +8,7 @@ MODULE gpl_module
   implicit none
 
   INTERFACE GPL
-    module procedure G_flat, G_superflat, G_condensed
+    module procedure G_flat, G_condensed, G_superflat, G_real, G_int
   END INTERFACE GPL
 
 CONTAINS 
@@ -61,16 +61,21 @@ CONTAINS
   END FUNCTION is_convergent
 
   SUBROUTINE print_G(z_flat, y)
-    complex(kind=prec) :: z_flat(:), y
-    if(verb >= 50) print*, 'G(', abs(z_flat), abs(y), ')'
+    complex(kind=prec) :: z_flat(:)
+    complex(kind=prec), optional :: y
+    if(present(y)) print*, 'G(', abs(z_flat), abs(y), ')'
+    if(.not. present(y)) print*, 'G(', abs(z_flat), ')'
+    
   END SUBROUTINE print_G
 
   RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
     ! evaluates a pending integral by reducing it to simpler ones and g functions
     complex(kind=prec) :: p(:), g(:), res
+    complex(kind=prec) :: y1, y2, b(size(p)-1), a(size(g)-1)
     integer :: i
-
     res = 0
+
+    ! if integration variable at end -> we gat a G function 
     if(i == size(g)+1) then
       res = G_flat([p(2:size(p)),g], p(1))
       return
@@ -78,10 +83,28 @@ CONTAINS
 
     ! if depth one and m = 1
     if(size(g) == 1) then
+      if(verb >= 30) print*, 'depth one and m > 0'
       res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
         + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       return
     end if
+
+    y1 = p(1)
+    b = p(2:size(p))
+    a = g(1:size(p)-1)
+    y2 = g(size(g))
+
+    ! case s_r at beginning
+    if(i == 1) then
+      print*, 'sr at beginning'
+      res = G_flat(b,y1) * G_flat([cmplx(0.0),a(i+1:size(a))],y2) &
+        + G_flat(a(i+1:size(a)),y2) * pending_integral(p,2,[y2]) & 
+        + pending_integral([p,a(i+1)],1,[a(i+2:size(a)),y2]) &
+        - G_flat(a(i+1:size(a)),y2) * pending_integral(p,2,[a(i+1)])
+
+        return
+    end if
+
   END FUNCTION pending_integral
 
   FUNCTION remove_sr_from_last_place(a,y2,m,sr) result(res)
@@ -117,14 +140,26 @@ CONTAINS
 
     if(i == size(a)) then
       ! sr at the end, thus shuffle
-      if(verb >= 30) print*, 's_r at the end'
+      if(verb >= 30) print*, 'sr at the end'
       mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
       res = remove_sr_from_last_place(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
       return
     end if
 
     ! thus s_r in middle, use (67)
-    if(verb >= 30) print*, 's_r in the middle'
+    if(verb >= 30) then 
+      print*, '--------------------------------------------------'
+      print*, 'sr in the middle, map to: '
+      call print_G([a(1:i-1),cmplx(0),a(i+1:size(a))],y2)
+      print*, 'PI with p=',[sr,a(i-1)],'i=', i-1,'g =', [a(1:i-2),a(i+1:size(a)),y2]
+      call print_G([a(i-1)],sr)
+      call print_G([a(1:i-1),a(i+1:size(a))],y2)
+      print*, 'and PI(p=',[sr,a(i+1)],'i=',i,'g =', [a(1:i-1),a(i+2:size(a)),y2]
+      call print_G([a(i+1)],sr)
+      call print_G([a(1:i-1),a(i+1:size(a))],y2)
+      print*, '--------------------------------------------------'
+    end if
+
     res = G_flat([a(1:i-1),cmplx(0),a(i+1:size(a))],y2) &
       - pending_integral([sr,a(i-1)], i-1, [a(1:i-2),a(i+1:size(a)),y2])  &
       + G_flat([a(i-1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        &
@@ -140,17 +175,17 @@ CONTAINS
     integer, allocatable :: m(:)
     logical :: is_depth_one
 
-    call print_G(z_flat,y)
+    if(verb >= 50) call print_G(z_flat,y)
 
 
     ! is just a logarithm? 
     if(all(abs(z_flat) < zero)) then
-      if(verb > 70) print*, 'all z are zero'
+      if(verb >= 70) print*, 'all z are zero'
       res = log(y)**size(z_flat) / factorial(size(z_flat))
       return
     end if
     if(size(z_flat) == 1) then
-      if(verb > 70) print*, 'is just a logarithm'
+      if(verb >= 70) print*, 'is just a logarithm'
       if(abs(z_flat(1)) <= zero) then 
         res = log(y)
         return 
@@ -219,6 +254,20 @@ CONTAINS
     complex(kind=prec) :: g(:), res
     res = G_flat(g(1:size(g)-1), g(size(g)))
   END FUNCTION G_superflat
+
+  FUNCTION G_real(g) result(res)
+    ! simpler notation for flat evaluation
+    real(kind=prec) :: g(:)
+    complex(kind=prec) :: res
+    res = G_flat(cmplx(g(1:size(g)-1)), cmplx(g(size(g))))
+  END FUNCTION G_real
+
+  FUNCTION G_int(g) result(res)
+    ! simpler notation for flat evaluation
+    integer:: g(:)
+    complex(kind=prec) :: res
+    res = G_flat(cmplx(g(1:size(g)-1)), cmplx(g(size(g))))
+  END FUNCTION G_int
 
   RECURSIVE FUNCTION G_condensed(m,z,y,k) result(res)
     ! computes the generalized polylogarithm G_{m1,..mk} (z1,...zk; y)
