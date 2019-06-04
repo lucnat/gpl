@@ -1,9 +1,4 @@
 
-! Contains some functions that might be useful later
-
-! Write your own print function with ability to suppress print
-! Muss immer alle prints und warnings ausschalten können
-! Test Programm schreiben mit exit codes -> gfortran 'test.f90' und dann 'echo $?'
 
 MODULE utils
   use globals
@@ -96,11 +91,11 @@ CONTAINS
     end do
   END FUNCTION min_index
 
-  FUNCTION zero_array(n) result(res)
+  FUNCTION zeroes(n) result(res)
     integer :: n
     complex(kind=prec) :: res(n)
     res = 0
-  END FUNCTION zero_array
+  END FUNCTION zeroes
 
   RECURSIVE FUNCTION factorial(n) result(res)
     integer, intent(in) :: n
@@ -185,3 +180,11 @@ END MODULE utils
 
 
 ! END  PROGRAM test
+
+
+
+! Contains some functions that might be useful later
+
+! Write your own print function with ability to suppress print
+! Muss immer alle prints und warnings ausschalten können
+! Test Programm schreiben mit exit codes -> gfortran 'test.f90' und dann 'echo $?'

@@ -13,7 +13,7 @@ CONTAINS
     complex(kind=prec) :: x, res
     integer :: i,n
     integer, allocatable :: j(:)
-    n = merge(n_passed,GPLInfinity,present(n_passed))  
+    n = 300
     j = (/(i, i=1,n,1)/) 
     res = sum(x**j / j**m)
   END FUNCTION naive_polylog

@@ -26,5 +26,5 @@ test: $(testobjects)
 		@$(LD) -o $@ $^ $(LFLAGS)
 
 clean:
-		@rm -f build/*
+		@rm -f build/*.o build/*.mod
 		@rm -f test eval

@@ -1,5 +1,4 @@
 
-! In terminal kann man den exit code bekommen via echo $?
 ! These tests assume that GPLInfinity = 30
 
 PROGRAM TEST
@@ -17,9 +16,6 @@ PROGRAM TEST
   integer :: i
 
   call parse_cmd_args()
-
-  res = GPL(cmplx([1,2,3,4]))
-  print*, res
 
   call do_MPL_tests() 
   call do_GPL_tests()
@@ -115,4 +111,5 @@ CONTAINS
   end subroutine do_shuffle_tests
 
 END PROGRAM TEST
- 
+
+! In terminal kann man den exit code bekommen via echo $? 

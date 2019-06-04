@@ -72,38 +72,70 @@ CONTAINS
     ! evaluates a pending integral by reducing it to simpler ones and g functions
     complex(kind=prec) :: p(:), g(:), res
     complex(kind=prec) :: y1, y2, b(size(p)-1), a(size(g)-1)
-    integer :: i
+    integer :: i, m
     res = 0
+
+    if(verb >= 50) print*, 'evaulating PI with p=',p,'i=',i,'g =',g   
 
     ! if integration variable at end -> we gat a G function 
     if(i == size(g)+1) then
       res = G_flat([p(2:size(p)),g], p(1))
       return
     end if
-
-    ! if depth one and m = 1
+  
+    ! if depth one and m = 1 use my (59)
     if(size(g) == 1) then
-      if(verb >= 30) print*, 'depth one and m > 0'
+      if(verb >= 30) print*, 'depth one and m = 1'
       res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
         + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       return
     end if
-
+  
     y1 = p(1)
     b = p(2:size(p))
     a = g(1:size(p)-1)
-    y2 = g(size(g))
+    y2 = g(size(g)) 
+    
+    ! if depth one and m > 1 use my (60)
+    if(all( abs( g(1:size(g)-1) ) < zero)) then 
+      ! thus depth one and m > 1 
+      
+      if(verb >= 30) print*, 'depth one and m > 1'
+      m = size(g)  ! actually, size(g)-1+1
+      res = -zeta(m)*pending_integral(p,1,zeroes(0)) &
+        + pending_integral([y2,cmplx(0.0)],m-1,[zeroes(m-2),y2])*pending_integral(p,1,zeroes(0)) &
+        - pending_integral([p,cmplx(0.0)],m-1,[zeroes(m-2),y2])
 
-    ! case s_r at beginning
+      return
+    end if
+  
+  
+    ! case higher depth, s_r at beginning, use my (68)
     if(i == 1) then
-      print*, 'sr at beginning'
-      res = G_flat(b,y1) * G_flat([cmplx(0.0),a(i+1:size(a))],y2) &
-        + G_flat(a(i+1:size(a)),y2) * pending_integral(p,2,[y2]) & 
-        + pending_integral([p,a(i+1)],1,[a(i+2:size(a)),y2]) &
-        - G_flat(a(i+1:size(a)),y2) * pending_integral(p,2,[a(i+1)])
-
+      if(verb >= 30) print*, 'higher depth, sr at beginning'
+      
+      res = pending_integral(p,1,zeroes(0)) * G_flat([cmplx(0.0),a],y2) & 
+        + pending_integral([p,y2],1,zeroes(0)) * G_flat(a,y2) &
+        + pending_integral([p,a(1)],1,[a,y2]) &
+        - pending_integral([p,a(1)],1,zeroes(0)) * G_flat(a,y2)
+    
         return
     end if
+    
+    ! case higher depth, s_r at the end, use my (64)
+    if(i == size(g)) then
+      if(verb >= 30) print*, 's_r at the end, need to shuffle (TODO)'
+      res = 0
+      return
+    end if
+    
+    ! case higher depth, s_r in middle, use my (67)
+    if(verb >= 30) print*, 's_r in the middle'
+    res =  -pending_integral(p,1,zeroes(0)) * G_flat([a(1:i-1),cmplx(0.0),a(i+1:size(a))],y2) &
+      + pending_integral([p,a(i-1)],i-1,[a(1:i-2),a(i:size(a)),y2]) &
+      + pending_integral([p,a(i-1)],1,zeroes(0)) * G_flat(a,y2) &
+      + pending_integral([p,a(i)], i, [a(1:i-1), a(i+1:size(a)),y2]) & 
+      - pending_integral([p,a(i)],1,zeroes(0)) * G_flat(a,y2)
 
   END FUNCTION pending_integral
 
@@ -113,14 +145,16 @@ CONTAINS
     complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+m)/))/  & 
       (product((/(i,i=1,size(a))/))*product((/(i,i=1,m)/))), & 
       size(a) + m)
-    alpha = shuffle_product(a,[zero_array(m-1),sr])
-    res = G_flat(a,y2)*G_flat([zero_array(m-1),sr],y2)
+    alpha = shuffle_product(a,[zeroes(m-1),sr])
+    res = G_flat(a,y2)*G_flat([zeroes(m-1),sr],y2)
     do j = 2,size(alpha,1)
       res = res - G_flat(alpha(j,:),y2)
     end do
   END FUNCTION remove_sr_from_last_place
 
-  FUNCTION reduce_to_convergent(a,y2) result(res)
+  FUNCTION make_convergent(a,y2) result(res)
+  ! goes from G-functions to pending integrals and simpler expressions according to (62),(64),(67) and (68)
+
     complex(kind=prec) :: a(:), y2, res, sr
 
     integer :: i, mminus1
@@ -128,9 +162,30 @@ CONTAINS
     res = 0
     i = min_index(abs(a))
     sr = a(i)
+
+  if(i == size(a)) then
+    ! sr at the end, thus shuffle as in (62)
+    if(verb >= 30) print*, 'sr at the end'
+    mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
+    res = remove_sr_from_last_place(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
+    return
+  end if    
+
     if(i == 1) then
-      !s_r at beginning, use (68)
-      if(verb >= 30) print*, 's_r at at first place'
+      !s_r at beginning, thus use (68)
+
+      if(verb >= 30) then 
+        print*, '--------------------------------------------------'
+        print*, 'sr at beginning, map to: '
+        call print_G([cmplx(0), a(i+1:size(a))], y2)
+        call print_G([y2], sr)
+        call print_G(a(i+1:size(a)), y2)
+        print*, 'PI with p=',[sr, a(i+1)],'i=',i,'g =', [a(i+2:size(a)), y2]
+        call print_G([a(i+1)], sr)
+        call print_G(a(i+1:size(a)), y2)
+        print*, '--------------------------------------------------'
+      end if
+
       res = G_flat([cmplx(0), a(i+1:size(a))], y2) &
         + G_flat([y2], sr) * G_flat(a(i+1:size(a)), y2) &
         + pending_integral([sr, a(i+1)], i, [a(i+2:size(a)), y2]) &
@@ -138,15 +193,7 @@ CONTAINS
       return
     end if
 
-    if(i == size(a)) then
-      ! sr at the end, thus shuffle
-      if(verb >= 30) print*, 'sr at the end'
-      mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
-      res = remove_sr_from_last_place(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
-      return
-    end if
-
-    ! thus s_r in middle, use (67)
+    ! so s_r in middle, use (67)
     if(verb >= 30) then 
       print*, '--------------------------------------------------'
       print*, 'sr in the middle, map to: '
@@ -165,7 +212,7 @@ CONTAINS
       + G_flat([a(i-1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        &
       + pending_integral([sr,a(i+1)], i, [a(1:i-1),a(i+2:size(a)),y2])    &
       - G_flat([a(i+1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        
-  END FUNCTION reduce_to_convergent
+  END FUNCTION make_convergent
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
@@ -218,7 +265,7 @@ CONTAINS
       s = shuffle_with_zero(z_flat(1:j-1))
       res = log(y)*G_flat(z_flat(1:size(z_flat)-1),y)
       do i = 1,size(s,1)
-        res = res - G_flat([s(i,:),z_flat(j),zero_array(kminusj-1)], y)
+        res = res - G_flat([s(i,:),z_flat(j),zeroes(kminusj-1)], y)
       end do
       res = res / kminusj
       deallocate(s)
@@ -228,7 +275,7 @@ CONTAINS
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
       if(verb >= 10) print*, 'need to make convergent'
-      res = reduce_to_convergent(z_flat, y)
+      res = make_convergent(z_flat, y)
       return
     end if
 
