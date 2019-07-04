@@ -75,7 +75,7 @@ CONTAINS
     integer :: i, m
     res = 0
 
-    if(verb >= 50) print*, 'evaulating PI with p=',p,'i=',i,'g =',g   
+    if(verb >= 50) print*, 'evaulating PI with p=',abs(p),'i=',abs(i),'g =',abs(g)   
 
     ! if integration variable at end -> we gat a G function 
     if(i == size(g)+1) then
@@ -180,7 +180,7 @@ CONTAINS
         call print_G([cmplx(0), a(i+1:size(a))], y2)
         call print_G([y2], sr)
         call print_G(a(i+1:size(a)), y2)
-        print*, 'PI with p=',[sr, a(i+1)],'i=',i,'g =', [a(i+2:size(a)), y2]
+        print*, 'PI with p=',abs([sr, a(i+1)]),'i=',i,'g =', abs([a(i+2:size(a)), y2])
         call print_G([a(i+1)], sr)
         call print_G(a(i+1:size(a)), y2)
         print*, '--------------------------------------------------'
@@ -198,10 +198,10 @@ CONTAINS
       print*, '--------------------------------------------------'
       print*, 'sr in the middle, map to: '
       call print_G([a(1:i-1),cmplx(0),a(i+1:size(a))],y2)
-      print*, 'PI with p=',[sr,a(i-1)],'i=', i-1,'g =', [a(1:i-2),a(i+1:size(a)),y2]
+      print*, 'PI with p=',abs([sr,a(i-1)]),'i=', i-1,'g =', abs([a(1:i-2),a(i+1:size(a)),y2])
       call print_G([a(i-1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
-      print*, 'and PI(p=',[sr,a(i+1)],'i=',i,'g =', [a(1:i-1),a(i+2:size(a)),y2]
+      print*, 'and PI with p=',abs([sr,a(i+1)]),'i=',i,'g =', abs([a(1:i-1),a(i+2:size(a)),y2])
       call print_G([a(i+1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
       print*, '--------------------------------------------------'
