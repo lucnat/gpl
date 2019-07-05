@@ -79,9 +79,6 @@ CONTAINS
 
     y1 = p(1)
     b = p(2:size(p))
-    a = g(1:size(p)-1)
-    y2 = g(size(g)) 
-    m = size(g)  ! actually, size(g)-1+1
 
     ! if integration variable is not in G-function
     if(i == 0 .or. size(g) == 0) then
@@ -106,7 +103,10 @@ CONTAINS
       return
     end if
   
-    
+    a = g(1:size(p)-1)
+    y2 = g(size(g)) 
+    m = size(g)  ! actually, size(g)-1+1
+
     ! if depth one and m > 1 use my (60)
     if(all( abs( g(1:size(g)-1) ) < zero)) then       
       if(verb >= 30) print*, 'case depth one and m > 1'
@@ -249,10 +249,10 @@ CONTAINS
     if(verb >= 50) call print_G(z_flat,y)
 
     ! add small imaginary part if not there
-    do i = 1,size(z_flat)
-      if(abs(aimag(z_flat(i))) < 1e-25) z_flat(i) = add_ieps(z_flat(i))
-      if(abs(aimag(y)) < 1e-25) y = add_ieps(y)
-    end do
+    ! do i = 1,size(z_flat)
+    !   if(abs(aimag(z_flat(i))) < 1e-25) z_flat(i) = add_ieps(z_flat(i))
+    !   if(abs(aimag(y)) < 1e-25) y = add_ieps(y)
+    ! end do
 
     ! is just a logarithm? 
     if(all(abs(z_flat) < zero)) then
