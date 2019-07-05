@@ -75,50 +75,74 @@ CONTAINS
     integer :: i, m
     res = 0
 
-    if(verb >= 50) print*, 'evaulating PI with p=',abs(p),'i=',abs(i),'g =',abs(g)   
+    if(verb >= 30) print*, 'evaluating PI with p=',abs(p),'i=',abs(i),'g =',abs(g)   
+
+    y1 = p(1)
+    b = p(2:size(p))
+    a = g(1:size(p)-1)
+    y2 = g(size(g)) 
+    m = size(g)  ! actually, size(g)-1+1
+
+    ! if integration variable is not in G-function
+    if(i == 0 .or. size(g) == 0) then
+      if(verb >= 30) print*, 'only integrals in front, we get G-function'
+      res = G_flat(b,y1)
+      return
+    end if
 
     ! if integration variable at end -> we gat a G function 
     if(i == size(g)+1) then
+      if(verb >= 30) print*, 'is just a G-function'
       res = G_flat([p(2:size(p)),g], p(1))
       return
     end if
   
+
     ! if depth one and m = 1 use my (59)
     if(size(g) == 1) then
-      if(verb >= 30) print*, 'depth one and m = 1'
+      if(verb >= 30) print*, 'case depth one and m = 1'
       res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
         + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       return
     end if
   
-    y1 = p(1)
-    b = p(2:size(p))
-    a = g(1:size(p)-1)
-    y2 = g(size(g)) 
     
     ! if depth one and m > 1 use my (60)
-    if(all( abs( g(1:size(g)-1) ) < zero)) then 
-      ! thus depth one and m > 1 
-      
-      if(verb >= 30) print*, 'depth one and m > 1'
-      m = size(g)  ! actually, size(g)-1+1
-      res = -zeta(m)*pending_integral(p,1,zeroes(0)) &
-        + pending_integral([y2,cmplx(0.0)],m-1,[zeroes(m-2),y2])*pending_integral(p,1,zeroes(0)) &
+    if(all( abs( g(1:size(g)-1) ) < zero)) then       
+      if(verb >= 30) print*, 'case depth one and m > 1'
+      if(verb >= 50) then 
+        print*, 'map to'
+        print*, 'zeta(',m,')'
+        print*, 'PI with p=',abs(p),'i=',0,'g =',zeroes(0)
+        print*, 'PI with p=',abs([y2,cmplx(0.0)]),'i=',m-1,'g =',[zeroes(m-2),y2]
+        print*, 'PI with p=',abs(p),'i=',0,'g =',zeroes(0)
+        print*, 'PI with p=',[p,cmplx(0.0)],'i=',m-1,'g =',zeroes(0)
+      end if
+      res = -zeta(m)*pending_integral(p,0,zeroes(0)) &
+        + pending_integral([y2,cmplx(0.0)],m-1,[zeroes(m-2),y2])*pending_integral(p,0,zeroes(0)) &
         - pending_integral([p,cmplx(0.0)],m-1,[zeroes(m-2),y2])
-
       return
     end if
   
-  
-    ! case higher depth, s_r at beginning, use my (68)
+    ! case of higher depth, s_r at beginning, use my (68)
     if(i == 1) then
-      if(verb >= 30) print*, 'higher depth, sr at beginning'
+      if(verb >= 30) print*, 'case higher depth, sr at beginning'
       
-      res = pending_integral(p,1,zeroes(0)) * G_flat([cmplx(0.0),a],y2) & 
-        + pending_integral([p,y2],1,zeroes(0)) * G_flat(a,y2) &
-        + pending_integral([p,a(1)],1,[a,y2]) &
-        - pending_integral([p,a(1)],1,zeroes(0)) * G_flat(a,y2)
-    
+      if(verb >= 50) then
+        print*, 'map to (using 68)'
+        print*, 'PI with p=',abs(p),'i=',0,'g =',zeroes(0) 
+        call print_G([cmplx(0.0),a],y2)
+        print*, 'PI with p=',abs([p,y2]),'i=',0,'g =',zeroes(0) 
+        call print_G(a,y2)
+        print*, 'PI with p=',abs([p,a(1)]),'i=',1,'g =',abs([a(2:size(a)),y2])
+        print*, 'PI with p=',abs([p,a(1)]),'i=',0,'g =',zeroes(0)
+        call print_G(a,y2)
+      end if
+
+      res = pending_integral(p,0,zeroes(0)) * G_flat([cmplx(0.0),a],y2) & 
+        + pending_integral([p,y2],0,zeroes(0)) * G_flat(a,y2) &
+        + pending_integral([p,a(1)],1,[a(2:size(a)),y2]) &
+        - pending_integral([p,a(1)],0,zeroes(0)) * G_flat(a,y2)
         return
     end if
     
@@ -224,6 +248,11 @@ CONTAINS
 
     if(verb >= 50) call print_G(z_flat,y)
 
+    ! add small imaginary part if not there
+    do i = 1,size(z_flat)
+      if(abs(aimag(z_flat(i))) < 1e-25) z_flat(i) = add_ieps(z_flat(i))
+      if(abs(aimag(y)) < 1e-25) y = add_ieps(y)
+    end do
 
     ! is just a logarithm? 
     if(all(abs(z_flat) < zero)) then

@@ -9,12 +9,11 @@ PROGRAM eval
 
   call parse_cmd_args()
   
-  res = GPL([0,1,3,2])
-  print*, res
-  
-  ! res = pending_integral(cmplx([4,0]),2,cmplx([1,2]))
+  ! res = GPL([0,1,3,2])
   ! print*, res
-
+  
+  res = pending_integral(cmplx([1,0]) + epsilon ,3, cmplx([0,0,2]) + epsilon)
+  print*, res
   
 END PROGRAM eval
 
