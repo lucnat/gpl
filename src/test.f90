@@ -11,7 +11,7 @@ PROGRAM TEST
   implicit none
   
   complex(kind=prec) :: res 
-  real, parameter :: tol = 1.0e-14
+  real, parameter :: tol = 1.0e-10
   logical :: tests_successful = .true. 
   integer :: i
 
@@ -39,7 +39,7 @@ CONTAINS
     if(delta < tol) then
       print*, '  ',' passed with delta = ', delta
     else 
-      print*, '  ',' failed with delta = ', delta
+      print*, '  ',' FAILED with delta = ', delta
       tests_successful = .false.
     end if
   end subroutine check
@@ -78,12 +78,12 @@ CONTAINS
     call check(res,ref)
   end subroutine test_one_condensed
 
-  subroutine test_one_flat(z,y,ref,test_id)
-    complex(kind=prec) :: z(:), y, res, ref
+  subroutine test_one_flat(z,ref,test_id)
+    complex(kind=prec) :: z(:), res, ref
     character(len=*) :: test_id
 
     print*, '  ', 'testing GPL ', test_id, ' ...'
-    res = G_flat(z,y)
+    res = GPL(z)
     call check(res,ref)
   end subroutine test_one_flat
 
@@ -101,6 +101,8 @@ CONTAINS
     ref = dcmplx(0.0020332632172573974)
     call test_one_condensed((/ 4 /),cmplx((/ 0 /)),cmplx(1.6),1,ref,'2.3')
 
+    ref = cmplx((0.09593041677639341, -0.8829351795197851))
+    call test_one_flat(cmplx([0,1,3,2]),ref,'2.4')
   end subroutine do_GPL_tests
 
   subroutine do_shuffle_tests() 

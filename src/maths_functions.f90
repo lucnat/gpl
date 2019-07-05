@@ -13,7 +13,7 @@ CONTAINS
     complex(kind=prec) :: x, res
     integer :: i,n
     integer, allocatable :: j(:)
-    n = 300
+    n = 1000
     j = (/(i, i=1,n,1)/) 
     res = sum(x**j / j**m)
   END FUNCTION naive_polylog
@@ -109,21 +109,19 @@ CONTAINS
    Li2 = Real(LI2_OLD,prec)
   END FUNCTION Li2
 
-  FUNCTION dilog_in_unit_circle(x) result(res)
-    ! evaluates for any argument x in unit circle
-    complex(kind=prec) :: x, res
-    res = naive_polylog(2,x)
-  END FUNCTION dilog_in_unit_circle
-
-  FUNCTION dilog(x) result(res)
+  RECURSIVE FUNCTION dilog(x) result(res)
     ! evaluates dilog for any argument
     complex(kind=prec) :: res
     complex(kind=prec) :: x
 
     if(abs(x) <= 1.0) then
-     res = naive_polylog(2,x)
+      if(abs(aimag(x)) < zero ) then
+        res = Li2(real(x))
+      else
+        res = naive_polylog(2,x)
+      endif
     else
-     res = -dilog_in_unit_circle(1/x) - pi**2/6 - log(add_ieps(-x))**2 / 2
+     res = -dilog(1/x) - pi**2/6 - log(add_ieps(-x))**2 / 2
    end if
   END FUNCTION dilog
 
@@ -235,9 +233,12 @@ CONTAINS
     ! evaluates trilog for any argument
     complex(kind=prec) :: res
     complex(kind=prec) :: x
-
     if(abs(x) <= 1.0) then
-     res = naive_polylog(3,x)
+      if(abs(aimag(x)) < zero ) then
+        res = Li3(real(x))
+      else
+        res = naive_polylog(3,x)
+      endif
     else
      res = naive_polylog(3,sub_ieps(x)**(-1)) - (log(-sub_ieps(x)))**3/6 - pi**2/6 * log(-sub_ieps(x))
    end if
@@ -247,6 +248,9 @@ CONTAINS
     ! computes the polylog for now naively (except for dilog half-naively)
     integer :: m
     complex(kind=prec) :: x,res
+      
+    print*, 'called polylog with m = ', m
+
     if(verb >= 70) print*, 'called polylog(',m,',',x,')'
     if(m == 2) then
       res = dilog(x)

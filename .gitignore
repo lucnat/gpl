@@ -6,3 +6,4 @@
 *.o
 *.mod
 *.smod
+.DS_Store
