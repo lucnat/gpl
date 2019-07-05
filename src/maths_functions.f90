@@ -248,9 +248,7 @@ CONTAINS
     ! computes the polylog for now naively (except for dilog half-naively)
     integer :: m
     complex(kind=prec) :: x,res
-      
-    print*, 'called polylog with m = ', m
-
+    
     if(verb >= 70) print*, 'called polylog(',m,',',x,')'
     if(m == 2) then
       res = dilog(x)

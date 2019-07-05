@@ -68,6 +68,32 @@ CONTAINS
     
   END SUBROUTINE print_G
 
+  FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
+    ! here what is passed is not the full a vector, only a1, ..., ak without the trailing zeroes
+    complex(kind=prec) :: a(:), y2, s(m), p(:), res
+    integer :: m, i, j, n
+    complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+size(s))/))/  & 
+        (product((/(i,i=1,size(a))/))*product((/(i,i=1,size(s))/))), & 
+        size(a) + size(s))
+
+    s = [zeroes(m-1),cmplx(42e50)]
+    alpha = shuffle_product(a,s)
+    if(verb >= 50) then
+      print*, 'mapping to '
+      call print_G(a,y2)
+      print*, 'PI with p=',abs(p),'i=',m,'g =',abs([zeroes(m-1),y2])
+    end if
+    res = GPL(a,y2)*pending_integral(p,m,[zeroes(m-1),y2])
+    if(verb >= 50) print*, 'also mapping to'
+    do j = 2,size(alpha, 1)
+      ! find location of s_r
+      n = find_first_true(alpha(j,:) == 42e50)
+      if(verb >= 50) print*, 'PI with p=',abs(p),'i=',n,'g =',abs([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
+      res = res - pending_integral(p, n, [alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
+    end do
+
+  END FUNCTION remove_sr_from_last_place_in_PI
+
   RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
     ! evaluates a pending integral by reducing it to simpler ones and g functions
     complex(kind=prec) :: p(:), g(:), res
@@ -146,10 +172,11 @@ CONTAINS
         return
     end if
     
-    ! case higher depth, s_r at the end, use my (64)
+    ! case higher depth, s_r at the end, use (62)
     if(i == size(g)) then
-      if(verb >= 30) print*, 's_r at the end, need to shuffle (TODO)'
-      res = 0
+      if(verb >= 30) print*, 's_r at the end, need to shuffle'
+      m = find_amount_trailing_zeros(a) + 1
+      res = remove_sr_from_last_place_in_PI(a(1:size(a)-(m-1)), y2, m, p)
       return
     end if
     
@@ -163,7 +190,7 @@ CONTAINS
 
   END FUNCTION pending_integral
 
-  FUNCTION remove_sr_from_last_place(a,y2,m,sr) result(res)
+  FUNCTION remove_sr_from_last_place_in_G(a,y2,m,sr) result(res)
     complex(kind=prec) :: a(:), sr, res,y2
     integer :: m,i,j
     complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+m)/))/  & 
@@ -174,13 +201,12 @@ CONTAINS
     do j = 2,size(alpha,1)
       res = res - G_flat(alpha(j,:),y2)
     end do
-  END FUNCTION remove_sr_from_last_place
+  END FUNCTION remove_sr_from_last_place_in_G
 
   FUNCTION make_convergent(a,y2) result(res)
   ! goes from G-functions to pending integrals and simpler expressions according to (62),(64),(67) and (68)
 
     complex(kind=prec) :: a(:), y2, res, sr
-
     integer :: i, mminus1
 
     res = 0
@@ -191,7 +217,7 @@ CONTAINS
     ! sr at the end, thus shuffle as in (62)
     if(verb >= 30) print*, 'sr at the end'
     mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
-    res = remove_sr_from_last_place(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
+    res = remove_sr_from_last_place_in_G(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
     return
   end if    
 

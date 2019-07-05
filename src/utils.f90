@@ -77,6 +77,18 @@ CONTAINS
     end do
   END FUNCTION find_first_zero
 
+  FUNCTION find_first_true(v) result(res)
+    ! returns index of first element in v that is true
+    logical :: v(:)
+    integer :: i, res
+    do i = 1, size(v)
+      if(v(i)) then
+        res = i
+        return
+      end if
+    end do
+  END FUNCTION find_first_true
+
   FUNCTION min_index(v)
     ! returns the index of the smallest element in v
     real(kind=prec) :: v(:), minimum
@@ -139,6 +151,15 @@ CONTAINS
       print*, abs(m(i,:))
     end do
   END SUBROUTINE print_matrix
+
+  SUBROUTINE print_logical_matrix(m) 
+    logical :: m(:,:)
+    integer :: s(2), i
+    s = shape(m)
+    do i = 1,s(1)
+      print*, m(i,:)
+    end do
+  END SUBROUTINE print_logical_matrix
 
   ! subroutine print(s1,s2,s3,s4,s5)
   !   character(len = *), intent(in), optional :: s1, s2, s3, s4, s5
