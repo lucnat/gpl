@@ -245,7 +245,8 @@ CONTAINS
   END FUNCTION trilog
 
   FUNCTION polylog(m,x) result(res)
-    ! computes the polylog for now naively (except for dilog half-naively)
+    ! computes the polylog
+    
     integer :: m
     complex(kind=prec) :: x,res
     

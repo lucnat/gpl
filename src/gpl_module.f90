@@ -65,7 +65,6 @@ CONTAINS
     complex(kind=prec), optional :: y
     if(present(y)) print*, 'G(', abs(z_flat), abs(y), ')'
     if(.not. present(y)) print*, 'G(', abs(z_flat), ')'
-    
   END SUBROUTINE print_G
 
   FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
@@ -91,7 +90,6 @@ CONTAINS
       if(verb >= 50) print*, 'PI with p=',abs(p),'i=',n,'g =',abs([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
       res = res - pending_integral(p, n, [alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
     end do
-
   END FUNCTION remove_sr_from_last_place_in_PI
 
   RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
@@ -187,7 +185,6 @@ CONTAINS
       + pending_integral([p,a(i-1)],1,zeroes(0)) * G_flat(a,y2) &
       + pending_integral([p,a(i)], i, [a(1:i-1), a(i+1:size(a)),y2]) & 
       - pending_integral([p,a(i)],1,zeroes(0)) * G_flat(a,y2)
-
   END FUNCTION pending_integral
 
   FUNCTION remove_sr_from_last_place_in_G(a,y2,m,sr) result(res)
@@ -204,7 +201,7 @@ CONTAINS
   END FUNCTION remove_sr_from_last_place_in_G
 
   FUNCTION make_convergent(a,y2) result(res)
-  ! goes from G-functions to pending integrals and simpler expressions according to (62),(64),(67) and (68)
+    ! goes from G-functions to pending integrals and simpler expressions according to (62),(64),(67) and (68)
 
     complex(kind=prec) :: a(:), y2, res, sr
     integer :: i, mminus1
@@ -213,13 +210,13 @@ CONTAINS
     i = min_index(abs(a))
     sr = a(i)
 
-  if(i == size(a)) then
-    ! sr at the end, thus shuffle as in (62)
-    if(verb >= 30) print*, 'sr at the end'
-    mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
-    res = remove_sr_from_last_place_in_G(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
-    return
-  end if    
+    if(i == size(a)) then
+      ! sr at the end, thus shuffle as in (62)
+      if(verb >= 30) print*, 'sr at the end'
+      mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
+      res = remove_sr_from_last_place_in_G(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
+      return
+    end if    
 
     if(i == 1) then
       !s_r at beginning, thus use (68)
@@ -263,6 +260,23 @@ CONTAINS
       + pending_integral([sr,a(i+1)], i, [a(1:i-1),a(i+2:size(a)),y2])    &
       - G_flat([a(i+1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        
   END FUNCTION make_convergent
+
+  FUNCTION improve_convergence(z) result(res)
+    ! improves the convergence by applying the Hoelder convolution to G(z1,...zk,1)
+    complex(kind=prec) :: z(:),oneminusz(size(z)), res
+    complex(kind=prec), parameter :: p = 2.0
+    integer :: k, j
+    if(verb >= 30) print*, 'requires Hoelder convolution'
+    oneminusz = 1-z
+    k = size(z)
+
+    res = G_flat(z,1.0/p) ! first term of the sum
+    res = res + (-1)**k * G_flat(oneminusz(k:1:-1), 1.0-1.0/p)
+    do j = 1,k-1
+      res = res + (-1)**j * G_flat(oneminusz(j:1:-1),1.0-1.0/p) * G_flat(z(j+1:k),1.0/p)
+    end do
+
+  END FUNCTION improve_convergence
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
@@ -333,6 +347,14 @@ CONTAINS
       res = make_convergent(z_flat, y)
       return
     end if
+
+    ! requires Hoelder convolution?
+    if( any(1.0 <= abs(z_flat/y) .and. abs(z_flat/y) <= 2.0) ) then
+      res = improve_convergence(z_flat/y)
+      return
+    end if
+
+
 
     ! thus it is convergent, and has no trailing zeros
     ! -> evaluate in condensed notation -> which will give series representation
@@ -414,3 +436,4 @@ CONTAINS
   END FUNCTION G_condensed
 
 END MODULE gpl_module
+

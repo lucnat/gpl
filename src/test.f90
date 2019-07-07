@@ -11,7 +11,7 @@ PROGRAM TEST
   implicit none
   
   complex(kind=prec) :: res 
-  real, parameter :: tol = 1.0e-10
+  real, parameter :: tol = 1.0e-12
   logical :: tests_successful = .true. 
   integer :: i
 
