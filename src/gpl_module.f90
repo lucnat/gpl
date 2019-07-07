@@ -172,14 +172,15 @@ CONTAINS
     
     ! case higher depth, s_r at the end, use (62)
     if(i == size(g)) then
-      if(verb >= 30) print*, 's_r at the end, need to shuffle'
+      if(verb >= 30) print*, 's_r at the end under PI, need to shuffle'
       m = find_amount_trailing_zeros(a) + 1
       res = remove_sr_from_last_place_in_PI(a(1:size(a)-(m-1)), y2, m, p)
       return
     end if
     
     ! case higher depth, s_r in middle, use my (67)
-    if(verb >= 30) print*, 's_r in the middle'
+    if(verb >= 30) print*, 's_r in the middle under PI'
+
     res =  -pending_integral(p,1,zeroes(0)) * G_flat([a(1:i-1),cmplx(0.0),a(i+1:size(a))],y2) &
       + pending_integral([p,a(i-1)],i-1,[a(1:i-2),a(i:size(a)),y2]) &
       + pending_integral([p,a(i-1)],1,zeroes(0)) * G_flat(a,y2) &

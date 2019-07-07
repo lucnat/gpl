@@ -11,7 +11,7 @@ PROGRAM eval
 
   call parse_cmd_args()
 
-  res = GPL([1.1,3.0,1.0])
+  res = GPL([2,1,3,4])
   print*, res
   
   ! res = pending_integral(cmplx([1,3]),2,cmplx([2,4]))
