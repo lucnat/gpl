@@ -66,6 +66,16 @@ CONTAINS
     end do
   END FUNCTION find_amount_trailing_zeros
 
+  FUNCTION find_marker(v) result(res)
+    type(inum) :: v(:)
+    integer res
+    do res=1,size(v)
+      if(v(res)%i0 == marker%i0) then
+        return
+      endif
+    enddo
+  END FUNCTION find_marker
+
   FUNCTION find_first_zero(v) result(res)
     ! returns index of first zero, or -1 if there is no zero
     integer :: v(:), i, res

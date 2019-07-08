@@ -77,7 +77,7 @@ CONTAINS
         (product((/(i,i=1,size(a))/))*product((/(i,i=1,size(s))/))), & 
         size(a) + size(s))
 
-    s = [zeroes(m-1),inum(cmplx(42e50),di0)]
+    s = [zeroes(m-1),marker]
     alpha = shuffle_product(a,s)
     if(verb >= 50) then
       print*, 'mapping to '
@@ -88,7 +88,7 @@ CONTAINS
     if(verb >= 50) print*, 'also mapping to'
     do j = 2,size(alpha, 1)
       ! find location of s_r
-      n = find_first_true(abs(tocmplx(alpha(j,:)) - 42e50) < zero)
+      n = find_marker(alpha(j,:))
       if(verb >= 50) print*, 'PI with p=',real(p),'i=',n,'g =',&
           real([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
       res = res - pending_integral(p, n, [alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])

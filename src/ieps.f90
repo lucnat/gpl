@@ -12,6 +12,7 @@ MODULE ieps
   type(inum), parameter :: izero=inum( 0.,di0)
   type(inum), parameter :: imone=inum(-1.,di0)
   type(inum), parameter :: ione=inum(+1.,di0)
+  type(inum), parameter :: marker=inum(0.,5)
 
 
   interface operator (*)
