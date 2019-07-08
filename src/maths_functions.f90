@@ -12,10 +12,19 @@ CONTAINS
     complex(kind=prec) :: x, res
     integer :: i,n
     integer, allocatable :: j(:)
-    n = 1000
+    n = 30
     j = (/(i, i=1,n,1)/) 
     res = sum(x**j / j**m)
   END FUNCTION naive_polylog
+
+  FUNCTION zeta(n) 
+    real(kind=prec) :: values(9), zeta
+    integer :: n
+    values = (/1.6449340668482262, 1.2020569031595942, 1.0823232337111381, &
+               1.03692775514337, 1.0173430619844488, 1.008349277381923, & 
+               1.0040773561979441, 1.0020083928260821, 1.000994575127818/)
+    zeta = values(n-1)
+  END FUNCTION zeta
 
   FUNCTION Li2(x)
 
@@ -255,7 +264,11 @@ CONTAINS
     else if(m == 3) then
       res = trilog(x)
     else
-      res = naive_polylog(m,x)
+      if(abs(x-cmplx(1)) < zero) then
+        res = zeta(m)
+      else 
+        res = naive_polylog(m,x)
+      end if
     end if
   END FUNCTION polylog
 

@@ -13,32 +13,6 @@ MODULE gpl_module
 
 CONTAINS 
 
-  FUNCTION zeta(n) 
-    real(kind=prec) :: values(9), zeta
-    integer :: n
-    values = (/1.6449340668482262, 1.2020569031595942, 1.0823232337111381, &
-               1.03692775514337, 1.0173430619844488, 1.008349277381923, & 
-               1.0040773561979441, 1.0020083928260821, 1.000994575127818/)
-    zeta = values(n-1)
-  END FUNCTION zeta
-
-  FUNCTION GPL_has_convergent_series(m,z,y)
-    ! tests if GPL has a convergent series representation
-    integer :: m(:)
-    complex(kind=prec) :: z(:), y
-    logical :: GPL_has_convergent_series
-
-    GPL_has_convergent_series = .false.
-
-    if(all(abs(y) <= abs(z))) then
-      if(m(1) == 1) then 
-        GPL_has_convergent_series = .true. !(abs((y/z(1) - 1)) < zero)
-      else 
-        GPL_has_convergent_series = .true.
-      end if
-    end if
-  END FUNCTION GPL_has_convergent_series
-
   FUNCTION GPL_zero_zi(l,y)
     ! used to compute the value of GPL when all zi are zero
     integer :: l
@@ -67,7 +41,7 @@ CONTAINS
     if(.not. present(y)) print*, 'G(', abs(z_flat), ')'
   END SUBROUTINE print_G
 
-  FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
+  RECURSIVE FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
     ! here what is passed is not the full a vector, only a1, ..., ak without the trailing zeroes
     integer :: m, i, j, n
     complex(kind=prec) :: a(:), y2, s(m), p(:), res
@@ -127,7 +101,7 @@ CONTAINS
       return
     end if
   
-    a = g(1:size(p)-1)
+    a = g(1:size(g)-1)
     y2 = g(size(g)) 
     m = size(g)  ! actually, size(g)-1+1
 
@@ -288,10 +262,9 @@ CONTAINS
 
     if(verb >= 50) call print_G(z_flat,y)
 
-    ! catch G(1,1)
+
     if(size(z_flat) == 1) then
       if( abs(z_flat(1) - y) <= zero ) then
-        print*, 'catch G(1,1)'
         res = 0
         return
       end if
@@ -429,7 +402,7 @@ CONTAINS
     end  if
 
     ! need make convergent?
-    if(.not. GPL_has_convergent_series(m,z,y)) then
+    if(.not. all(abs(y) <= abs(z))) then
       z_flat = get_flattened_z(m,z)
       res = G_flat(z_flat,y)
       return
