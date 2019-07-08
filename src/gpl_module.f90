@@ -262,7 +262,7 @@ CONTAINS
       - G_flat([a(i+1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        
   END FUNCTION make_convergent
 
-  FUNCTION improve_convergence(z) result(res)
+  RECURSIVE FUNCTION improve_convergence(z) result(res)
     ! improves the convergence by applying the Hoelder convolution to G(z1,...zk,1)
     complex(kind=prec) :: z(:),oneminusz(size(z)), res
     complex(kind=prec), parameter :: p = 2.0
@@ -427,8 +427,9 @@ CONTAINS
       return
     end if
 
-    do i = 1,k
-      x(i) = merge(y/z(1), z(i-1)/z(i),i == 1)
+    x(1) = y/z(1)
+    do i = 2,k
+      x(i) = z(i-1)/z(i)
     end do
     ! print*, 'computed using Li with '
     ! print*, 'm = ', m
