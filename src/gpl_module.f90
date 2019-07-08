@@ -22,9 +22,9 @@ CONTAINS
     zeta = values(n-1)
   END FUNCTION zeta
 
-  FUNCTION GPL_has_convergent_series(m,z,y,k)
+  FUNCTION GPL_has_convergent_series(m,z,y)
     ! tests if GPL has a convergent series representation
-    integer :: m(:), k
+    integer :: m(:)
     complex(kind=prec) :: z(:), y
     logical :: GPL_has_convergent_series
 
@@ -43,7 +43,7 @@ CONTAINS
     ! used to compute the value of GPL when all zi are zero
     integer :: l
     complex(kind=prec) :: y, GPL_zero_zi
-    GPL_zero_zi = 1.0d0/factorial(l) * log(y) ** l
+    GPL_zero_zi = 1.0_prec/factorial(l) * log(y) ** l
   END FUNCTION GPL_zero_zi
 
   FUNCTION is_convergent(z,y)
@@ -69,8 +69,8 @@ CONTAINS
 
   FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
     ! here what is passed is not the full a vector, only a1, ..., ak without the trailing zeroes
-    complex(kind=prec) :: a(:), y2, s(m), p(:), res
     integer :: m, i, j, n
+    complex(kind=prec) :: a(:), y2, s(m), p(:), res
     complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+size(s))/))/  & 
         (product((/(i,i=1,size(a))/))*product((/(i,i=1,size(s))/))), & 
         size(a) + size(s))
@@ -399,7 +399,7 @@ CONTAINS
     ! assumes zero arguments expressed through the m's
     
     integer :: m(:), k, i
-    complex(kind=prec) :: z(:), x(k), y, res, c(sum(m)+1,sum(m)+1), z_flat(sum(m)), a(sum(m)-1)
+    complex(kind=prec) :: z(:), x(k), y, res, z_flat(sum(m))
 
     ! print*, 'called G_condensed with args'
     ! print*, 'm = ', m
@@ -421,7 +421,7 @@ CONTAINS
     end  if
 
     ! need make convergent?
-    if(.not. GPL_has_convergent_series(m,z,y,k)) then
+    if(.not. GPL_has_convergent_series(m,z,y)) then
       z_flat = get_flattened_z(m,z)
       res = G_flat(z_flat,y)
       return

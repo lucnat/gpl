@@ -5,7 +5,8 @@ UNAME_S := $(shell uname -s)
 
 SHA1=sha1sum
 FC=gfortran
-FFLAGS=-fdefault-real-8 -cpp
+FFLAGS=-fdefault-real-8 -cpp -g -pedantic-errors -Werror -std=f2008 \
+       -Wall -Wno-maybe-uninitialized -Wno-uninitialized -O3 -fcheck=all
 
 LD=gfortran
 

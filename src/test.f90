@@ -13,13 +13,12 @@ PROGRAM TEST
   complex(kind=prec) :: res 
   real, parameter :: tol = 1.0e-12
   logical :: tests_successful = .true. 
-  integer :: i
 
   call parse_cmd_args()
 
   call do_MPL_tests() 
   call do_GPL_tests()
-  ! call do_shuffle_tests() ! put this somewhere else
+  call do_shuffle_tests() ! put this somewhere else
 
 
   if(tests_successful) then
@@ -58,13 +57,13 @@ CONTAINS
     complex(kind=prec) :: ref
     print*, 'doing MPL tests...'
     
-    ref = dcmplx(0.022696600480693277651633)
+    ref = cmplx(0.022696600480693277651633)
     call test_one_MPL((/ 1,1 /),cmplx((/ 0.3156498673740053, 0.3431255827785649 /)),ref, '1.1')
     
-    ref = dcmplx(0.00023134615630308335448329926098409)
+    ref = cmplx(0.00023134615630308335448329926098409)
     call test_one_MPL((/ 1,1 /),cmplx((/ 0.03, 0.5012562893380046 /)),ref, '1.2')
     
-    ref = dcmplx(0.000023446106415452030937059124671151)
+    ref = cmplx(0.000023446106415452030937059124671151)
     call test_one_MPL((/ 2,1,2 /),cmplx((/ 0.03, 0.5012562893380046, 55.3832 /)),ref, '1.3')  
   end subroutine do_MPL_tests
 
@@ -94,10 +93,10 @@ CONTAINS
     print*, 'doing GPL tests...'
     
     ref = cmplx(0.0819393734128676)
-    call test_one_condensed((/ 1,1 /),cmplx((/ 1.3d0, 1.1d0 /)),cmplx(0.4),2,ref,'2.1')
+    call test_one_condensed((/ 1,1 /),cmplx((/ 1.3_prec, 1.1_prec /)),cmplx(0.4),2,ref,'2.1')
     
     ref = cmplx(0.01592795952537145)
-    call test_one_condensed((/ 3,2 /),cmplx((/ 1.3d0, 1.1d0 /)),cmplx(0.4),2,ref,'2.2')
+    call test_one_condensed((/ 3,2 /),cmplx((/ 1.3_prec, 1.1_prec /)),cmplx(0.4),2,ref,'2.2')
     
     ref = cmplx(0.0020332632172573974)
     call test_one_condensed((/ 4 /),cmplx((/ 0 /)),cmplx(1.6),1,ref,'2.3')

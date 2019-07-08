@@ -6,10 +6,9 @@ MODULE maths_functions
 
 CONTAINS 
 
-  FUNCTION naive_polylog(m,x,n_passed) result(res)
+  FUNCTION naive_polylog(m,x) result(res)
     ! Computes the classical polylogarithm Li_m(x) using series representation up to order n
     integer :: m
-    integer, optional :: n_passed
     complex(kind=prec) :: x, res
     integer :: i,n
     integer, allocatable :: j(:)
