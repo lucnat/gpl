@@ -9,6 +9,9 @@
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]
 [._]sw[a-p]
+build/mcc*
+build/*.c
+gpl
 *.out
 *.o
 *.mod

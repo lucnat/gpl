@@ -445,5 +445,14 @@ CONTAINS
     res = (-1)**k * MPL(m,x)
   END FUNCTION G_condensed
 
+
+
+  FUNCTION G_SUPERFLATN(c0,n)
+    integer, intent(in) :: n
+    complex(kind=prec), intent(in) :: c0(n)
+    complex(kind=prec) g_superflatn
+    G_superflatn=G_superflat(c0)
+  END FUNCTION
+
 END MODULE gpl_module
 
