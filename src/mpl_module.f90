@@ -25,7 +25,7 @@ CONTAINS
     logical :: MPL_converges
     MPL_converges = .false.
     if(abs(product(x)) < 1) then
-      if(m(1) /= 1 .or. x(1) /= 1) then
+      if(m(1) /= 1 .or. abs(x(1) - 1) < zero) then
         MPL_converges = .true.
       end if
     end if

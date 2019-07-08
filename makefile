@@ -10,7 +10,7 @@ MODE=DEBUG
 FC=gfortran
 AR= ar rcs
 FFLAGS=-fdefault-real-8 -cpp -pedantic-errors -std=f2008
-FFLAGS+= -Werror -Wall -Wno-maybe-uninitialized -Wno-uninitialized -Wno-compare-reals
+FFLAGS+= -Werror -Wall -Wno-maybe-uninitialized -Wno-uninitialized 
 
 ifeq ($(MODE),RELEASE)
   FFLAGS += -O3 -funroll-loops -Wtaps

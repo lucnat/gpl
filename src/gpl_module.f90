@@ -32,7 +32,7 @@ CONTAINS
 
     if(all(abs(y) <= abs(z))) then
       if(m(1) == 1) then 
-        GPL_has_convergent_series = (y/z(1) /= 1)
+        GPL_has_convergent_series = .true. !(abs((y/z(1) - 1)) < zero)
       else 
         GPL_has_convergent_series = .true.
       end if
@@ -63,7 +63,7 @@ CONTAINS
   SUBROUTINE print_G(z_flat, y)
     complex(kind=prec) :: z_flat(:)
     complex(kind=prec), optional :: y
-    if(present(y)) print*, 'G(', abs(z_flat), abs(y), ')'
+    if(present(y)) print*, 'G(', real(z_flat), real(y), ')'
     if(.not. present(y)) print*, 'G(', abs(z_flat), ')'
   END SUBROUTINE print_G
 
@@ -80,14 +80,14 @@ CONTAINS
     if(verb >= 50) then
       print*, 'mapping to '
       call print_G(a,y2)
-      print*, 'PI with p=',abs(p),'i=',m,'g =',abs([zeroes(m-1),y2])
+      print*, 'PI with p=',real(p),'i=',m,'g =',real([zeroes(m-1),y2])
     end if
     res = GPL(a,y2)*pending_integral(p,m,[zeroes(m-1),y2])
     if(verb >= 50) print*, 'also mapping to'
     do j = 2,size(alpha, 1)
       ! find location of s_r
-      n = find_first_true(alpha(j,:) == 42e50)
-      if(verb >= 50) print*, 'PI with p=',abs(p),'i=',n,'g =',abs([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
+      n = find_first_true(abs(alpha(j,:) - 42e50) < zero)
+      if(verb >= 50) print*, 'PI with p=',real(p),'i=',n,'g =',real([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
       res = res - pending_integral(p, n, [alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
     end do
   END FUNCTION remove_sr_from_last_place_in_PI
@@ -99,7 +99,7 @@ CONTAINS
     integer :: i, m
     res = 0
 
-    if(verb >= 30) print*, 'evaluating PI with p=',abs(p),'i=',abs(i),'g =',abs(g)   
+    if(verb >= 30) print*, 'evaluating PI with p=',real(p),'i=',real(i),'g =',real(g)   
 
     y1 = p(1)
     b = p(2:size(p))
@@ -137,9 +137,9 @@ CONTAINS
       if(verb >= 50) then 
         print*, 'map to'
         print*, 'zeta(',m,')'
-        print*, 'PI with p=',abs(p),'i=',0,'g =',zeroes(0)
-        print*, 'PI with p=',abs([y2,cmplx(0.0)]),'i=',m-1,'g =',[zeroes(m-2),y2]
-        print*, 'PI with p=',abs(p),'i=',0,'g =',zeroes(0)
+        print*, 'PI with p=',real(p),'i=',0,'g =',zeroes(0)
+        print*, 'PI with p=',real([y2,cmplx(0.0)]),'i=',m-1,'g =',[zeroes(m-2),y2]
+        print*, 'PI with p=',real(p),'i=',0,'g =',zeroes(0)
         print*, 'PI with p=',[p,cmplx(0.0)],'i=',m-1,'g =',zeroes(0)
       end if
       res = -zeta(m)*pending_integral(p,0,zeroes(0)) &
@@ -154,12 +154,12 @@ CONTAINS
       
       if(verb >= 50) then
         print*, 'map to (using 68)'
-        print*, 'PI with p=',abs(p),'i=',0,'g =',zeroes(0) 
+        print*, 'PI with p=',real(p),'i=',0,'g =',zeroes(0) 
         call print_G([cmplx(0.0),a],y2)
-        print*, 'PI with p=',abs([p,y2]),'i=',0,'g =',zeroes(0) 
+        print*, 'PI with p=',real([p,y2]),'i=',0,'g =',zeroes(0) 
         call print_G(a,y2)
-        print*, 'PI with p=',abs([p,a(1)]),'i=',1,'g =',abs([a(2:size(a)),y2])
-        print*, 'PI with p=',abs([p,a(1)]),'i=',0,'g =',zeroes(0)
+        print*, 'PI with p=',real([p,a(1)]),'i=',1,'g =',real([a(2:size(a)),y2])
+        print*, 'PI with p=',real([p,a(1)]),'i=',0,'g =',zeroes(0)
         call print_G(a,y2)
       end if
 
@@ -188,7 +188,7 @@ CONTAINS
       - pending_integral([p,a(i)],1,zeroes(0)) * G_flat(a,y2)
   END FUNCTION pending_integral
 
-  FUNCTION remove_sr_from_last_place_in_G(a,y2,m,sr) result(res)
+  RECURSIVE FUNCTION remove_sr_from_last_place_in_G(a,y2,m,sr) result(res)
     complex(kind=prec) :: a(:), sr, res,y2
     integer :: m,i,j
     complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+m)/))/  & 
@@ -201,7 +201,7 @@ CONTAINS
     end do
   END FUNCTION remove_sr_from_last_place_in_G
 
-  FUNCTION make_convergent(a,y2) result(res)
+  RECURSIVE FUNCTION make_convergent(a,y2) result(res)
     ! goes from G-functions to pending integrals and simpler expressions according to (62),(64),(67) and (68)
 
     complex(kind=prec) :: a(:), y2, res, sr
@@ -228,7 +228,7 @@ CONTAINS
         call print_G([cmplx(0), a(i+1:size(a))], y2)
         call print_G([y2], sr)
         call print_G(a(i+1:size(a)), y2)
-        print*, 'PI with p=',abs([sr, a(i+1)]),'i=',i,'g =', abs([a(i+2:size(a)), y2])
+        print*, 'PI with p=',real([sr, a(i+1)]),'i=',i,'g =', real([a(i+2:size(a)), y2])
         call print_G([a(i+1)], sr)
         call print_G(a(i+1:size(a)), y2)
         print*, '--------------------------------------------------'
@@ -246,10 +246,10 @@ CONTAINS
       print*, '--------------------------------------------------'
       print*, 'sr in the middle, map to: '
       call print_G([a(1:i-1),cmplx(0),a(i+1:size(a))],y2)
-      print*, 'PI with p=',abs([sr,a(i-1)]),'i=', i-1,'g =', abs([a(1:i-2),a(i+1:size(a)),y2])
+      print*, 'PI with p=',real([sr,a(i-1)]),'i=', i-1,'g =', real([a(1:i-2),a(i+1:size(a)),y2])
       call print_G([a(i-1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
-      print*, 'and PI with p=',abs([sr,a(i+1)]),'i=',i,'g =', abs([a(1:i-1),a(i+2:size(a)),y2])
+      print*, 'and PI with p=',real([sr,a(i+1)]),'i=',i,'g =', real([a(1:i-1),a(i+2:size(a)),y2])
       call print_G([a(i+1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
       print*, '--------------------------------------------------'
@@ -276,7 +276,6 @@ CONTAINS
     do j = 1,k-1
       res = res + (-1)**j * G_flat(oneminusz(j:1:-1),1.0-1.0/p) * G_flat(z(j+1:k),1.0/p)
     end do
-
   END FUNCTION improve_convergence
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
@@ -288,6 +287,15 @@ CONTAINS
     logical :: is_depth_one
 
     if(verb >= 50) call print_G(z_flat,y)
+
+    ! catch G(1,1)
+    if(size(z_flat) == 1) then
+      if( abs(z_flat(1) - y) <= zero ) then
+        print*, 'catch G(1,1)'
+        res = 0
+        return
+      end if
+    end if
 
     ! add small imaginary part if not there
     ! do i = 1,size(z_flat)
@@ -350,7 +358,7 @@ CONTAINS
     end if
 
     ! requires Hoelder convolution?
-    if( any(1.0 <= abs(z_flat/y) .and. abs(z_flat/y) <= 2.0) ) then
+    if( any(1.0 <= abs(z_flat/y) .and. abs(z_flat/y) <= 1.1) ) then
       res = improve_convergence(z_flat/y)
       return
     end if

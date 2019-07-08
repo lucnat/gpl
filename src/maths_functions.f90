@@ -61,7 +61,7 @@ CONTAINS
     LI2_OLD=PI6
     Li2 = Real(LI2_OLD,prec)
     RETURN
-   ELSE IF(X .EQ. MONE) THEN
+   ELSE IF(abs(x-MONE) < zero) THEN
     LI2_OLD=MALF*PI6
     RETURN
    END IF
@@ -120,7 +120,7 @@ CONTAINS
         res = naive_polylog(2,x)
       endif
     else
-     res = -dilog(1/x) - pi**2/6 - log(add_ieps(-x))**2 / 2
+     res = -dilog(1/x) - (pi**2) /6 - log(add_ieps(-x))**2 / 2
    end if
   END FUNCTION dilog
 
@@ -185,7 +185,7 @@ CONTAINS
     IF(X > 0.999999_prec) THEN
       LI3=zeta3
     RETURN
-    ELSE IF(X .EQ. -1._prec) THEN
+    ELSE IF( abs(x+1) < zero) THEN
       LI3=-0.75_prec*zeta3
     RETURN
     END IF
