@@ -1,14 +1,12 @@
-
-SHELL = /bin/sh
-
-UNAME_S := $(shell uname -s)
-
-SHA1=sha1sum
-
 MODE=DEBUG
 
+
 FC=gfortran
-AR= ar rcs
+AR=ar rcs
+CC=gcc
+MCC=mcc
+LD=gfortran
+
 FFLAGS=-fdefault-real-8 -cpp -pedantic-errors -std=f2008
 FFLAGS+= -Werror -Wall -Wno-maybe-uninitialized -Wno-uninitialized 
 
@@ -19,9 +17,10 @@ else
   FFLAGS += -ffpe-trap=invalid,overflow -fdump-core -fbacktrace
 endif
 
-LD=gfortran
+files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o
+objects = $(addprefix build/,$(files))
 
-objects=build/globals.o build/ieps.o build/utils.o build/shuffle.o build/maths_functions.o build/mpl_module.o build/gpl_module.o
+all: libgpl.a gpl eval test
 
 libgpl.a:$(objects)
 		@echo "AR $@"
@@ -39,6 +38,9 @@ eval: libgpl.a build/eval.o
 test: $(objects) build/test.o
 		@echo "LD $@"
 		@$(LD) -o $@ $^ $(LFLAGS)
+
+check: test
+		./$<
 
 clean:
 		@rm -f build/*.o build/*.mod
