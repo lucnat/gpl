@@ -4,6 +4,9 @@ MODULE maths_functions
   use utils
   implicit none
 
+  interface polylog
+    module procedure polylogcmplx,polyloginum
+  end interface polylog
 CONTAINS 
 
   FUNCTION naive_polylog(m,x) result(res)
@@ -243,7 +246,14 @@ CONTAINS
    end if
   END FUNCTION trilog
 
-  FUNCTION polylog(m,x) result(res)
+  FUNCTION polyloginum(m,x) result(res)
+    integer :: m
+    type(inum) :: x
+    complex(kind=prec) :: res
+    res = polylog(m,x%c)
+  END FUNCTION polyloginum
+
+  FUNCTION polylogcmplx(m,x) result(res)
     ! computes the polylog
     
     integer :: m
@@ -257,7 +267,7 @@ CONTAINS
     else
       res = naive_polylog(m,x)
     end if
-  END FUNCTION polylog
+  END FUNCTION polylogcmplx
 
 END MODULE maths_functions
 

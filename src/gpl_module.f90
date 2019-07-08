@@ -5,12 +5,12 @@ MODULE gpl_module
   use maths_functions
   use shuffle
   use mpl_module
+  use ieps
   implicit none
 
   INTERFACE GPL
     module procedure G_flat, G_condensed, G_superflat, G_real, G_int
   END INTERFACE GPL
-
 CONTAINS 
 
   FUNCTION zeta(n) 
@@ -25,7 +25,7 @@ CONTAINS
   FUNCTION GPL_has_convergent_series(m,z,y)
     ! tests if GPL has a convergent series representation
     integer :: m(:)
-    complex(kind=prec) :: z(:), y
+    type(inum) :: z(:), y
     logical :: GPL_has_convergent_series
 
     GPL_has_convergent_series = .false.
@@ -42,14 +42,15 @@ CONTAINS
   FUNCTION GPL_zero_zi(l,y)
     ! used to compute the value of GPL when all zi are zero
     integer :: l
-    complex(kind=prec) :: y, GPL_zero_zi
+    type(inum) :: y
+    complex(kind=prec) :: GPL_zero_zi
     GPL_zero_zi = 1.0_prec/factorial(l) * log(y) ** l
   END FUNCTION GPL_zero_zi
 
   FUNCTION is_convergent(z,y)
     ! returns true if G(z,y) convergent, otherwise false
     ! can be used in either notation (flat or condensed)
-    complex(kind=prec) :: z(:), y
+    type(inum) :: z(:), y
     logical :: is_convergent
     integer :: i
 
@@ -61,45 +62,48 @@ CONTAINS
   END FUNCTION is_convergent
 
   SUBROUTINE print_G(z_flat, y)
-    complex(kind=prec) :: z_flat(:)
-    complex(kind=prec), optional :: y
-    if(present(y)) print*, 'G(', real(z_flat), real(y), ')'
+    type(inum)  :: z_flat(:)
+    type(inum) , optional :: y
+    if(present(y)) print*, 'G(', real(tocmplx(z_flat)), real(y%c), ')'
     if(.not. present(y)) print*, 'G(', abs(z_flat), ')'
   END SUBROUTINE print_G
 
   FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
     ! here what is passed is not the full a vector, only a1, ..., ak without the trailing zeroes
     integer :: m, i, j, n
-    complex(kind=prec) :: a(:), y2, s(m), p(:), res
+    type(inum) :: a(:), y2, s(m), p(:)
+    complex(kind=prec) :: res
     complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+size(s))/))/  & 
         (product((/(i,i=1,size(a))/))*product((/(i,i=1,size(s))/))), & 
         size(a) + size(s))
 
-    s = [zeroes(m-1),cmplx(42e50)]
-    alpha = shuffle_product(a,s)
+    s = [zeroes(m-1),inum(cmplx(42e50),di0)]
+    alpha = shuffle_product(tocmplx(a),tocmplx(s))
     if(verb >= 50) then
       print*, 'mapping to '
       call print_G(a,y2)
-      print*, 'PI with p=',real(p),'i=',m,'g =',real([zeroes(m-1),y2])
+      print*, 'PI with p=',real(tocmplx(p)),'i=',m,'g =',real(tocmplx([zeroes(m-1),y2]))
     end if
     res = GPL(a,y2)*pending_integral(p,m,[zeroes(m-1),y2])
     if(verb >= 50) print*, 'also mapping to'
     do j = 2,size(alpha, 1)
       ! find location of s_r
       n = find_first_true(abs(alpha(j,:) - 42e50) < zero)
-      if(verb >= 50) print*, 'PI with p=',real(p),'i=',n,'g =',real([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
-      res = res - pending_integral(p, n, [alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
+      if(verb >= 50) print*, 'PI with p=',real(tocmplx(p)),'i=',n,'g =',&
+          real([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),tocmplx(y2)])
+      res = res - pending_integral(p, n, [toinum(alpha(j,1:n-1)),toinum(alpha(j,n+1:size(alpha,2))),y2])
     end do
   END FUNCTION remove_sr_from_last_place_in_PI
 
   RECURSIVE FUNCTION pending_integral(p,i,g) result(res)
     ! evaluates a pending integral by reducing it to simpler ones and g functions
-    complex(kind=prec) :: p(:), g(:), res
-    complex(kind=prec) :: y1, y2, b(size(p)-1), a(size(g)-1)
+    complex(kind=prec) :: res
+    type(inum) :: p(:), g(:)
+    type(inum) :: y1, y2, b(size(p)-1), a(size(g)-1)
     integer :: i, m
     res = 0
 
-    if(verb >= 30) print*, 'evaluating PI with p=',real(p),'i=',real(i),'g =',real(g)   
+    if(verb >= 30) print*, 'evaluating PI with p=',real(tocmplx(p)),'i=',real(i),'g =',real(tocmplx(g))
 
     y1 = p(1)
     b = p(2:size(p))
@@ -122,8 +126,10 @@ CONTAINS
     ! if depth one and m = 1 use my (59)
     if(size(g) == 1) then
       if(verb >= 30) print*, 'case depth one and m = 1'
-      res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
-        + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
+      !res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
+      !  + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
+      res = pending_integral(p,2,[g(1)]) - pending_integral(p,2,[izero]) &
+        + G_flat(p(2:size(p)), p(1)) * log(imone*g(1))
       return
     end if
   
@@ -137,14 +143,14 @@ CONTAINS
       if(verb >= 50) then 
         print*, 'map to'
         print*, 'zeta(',m,')'
-        print*, 'PI with p=',real(p),'i=',0,'g =',zeroes(0)
-        print*, 'PI with p=',real([y2,cmplx(0.0)]),'i=',m-1,'g =',[zeroes(m-2),y2]
-        print*, 'PI with p=',real(p),'i=',0,'g =',zeroes(0)
-        print*, 'PI with p=',[p,cmplx(0.0)],'i=',m-1,'g =',zeroes(0)
+        print*, 'PI with p=',real(tocmplx(p)),'i=',0,'g =',tocmplx(zeroes(0))
+        print*, 'PI with p=',real(tocmplx([y2,izero])),'i=',m-1,'g =',tocmplx([zeroes(m-2),y2])
+        print*, 'PI with p=',real(tocmplx(p)),'i=',0,'g =',tocmplx(zeroes(0))
+        print*, 'PI with p=',tocmplx([p,izero]),'i=',m-1,'g =',tocmplx(zeroes(0))
       end if
       res = -zeta(m)*pending_integral(p,0,zeroes(0)) &
-        + pending_integral([y2,cmplx(0.0)],m-1,[zeroes(m-2),y2])*pending_integral(p,0,zeroes(0)) &
-        - pending_integral([p,cmplx(0.0)],m-1,[zeroes(m-2),y2])
+        + pending_integral([y2,izero],m-1,[zeroes(m-2),y2])*pending_integral(p,0,zeroes(0)) &
+        - pending_integral([p,izero] ,m-1,[zeroes(m-2),y2])
       return
     end if
   
@@ -154,16 +160,16 @@ CONTAINS
       
       if(verb >= 50) then
         print*, 'map to (using 68)'
-        print*, 'PI with p=',real(p),'i=',0,'g =',zeroes(0) 
-        call print_G([cmplx(0.0),a],y2)
-        print*, 'PI with p=',real([p,y2]),'i=',0,'g =',zeroes(0) 
+        print*, 'PI with p=',real(tocmplx(p)),'i=',0,'g =',tocmplx(zeroes(0) )
+        call print_G([izero,a],y2)
+        print*, 'PI with p=',real(tocmplx([p,y2])),'i=',0,'g =',tocmplx(zeroes(0) )
         call print_G(a,y2)
-        print*, 'PI with p=',real([p,a(1)]),'i=',1,'g =',real([a(2:size(a)),y2])
-        print*, 'PI with p=',real([p,a(1)]),'i=',0,'g =',zeroes(0)
+        print*, 'PI with p=',real(tocmplx([p,a(1)])),'i=',1,'g =',real(tocmplx([a(2:size(a)),y2]))
+        print*, 'PI with p=',real(tocmplx([p,a(1)])),'i=',0,'g =',tocmplx(zeroes(0))
         call print_G(a,y2)
       end if
 
-      res = pending_integral(p,0,zeroes(0)) * G_flat([cmplx(0.0),a],y2) & 
+      res = pending_integral(p,0,zeroes(0)) * G_flat([izero,a],y2) &
         + pending_integral([p,y2],0,zeroes(0)) * G_flat(a,y2) &
         + pending_integral([p,a(1)],1,[a(2:size(a)),y2]) &
         - pending_integral([p,a(1)],0,zeroes(0)) * G_flat(a,y2)
@@ -181,7 +187,7 @@ CONTAINS
     ! case higher depth, s_r in middle, use my (67)
     if(verb >= 30) print*, 's_r in the middle under PI'
 
-    res =  -pending_integral(p,1,zeroes(0)) * G_flat([a(1:i-1),cmplx(0.0),a(i+1:size(a))],y2) &
+    res =  -pending_integral(p,1,zeroes(0)) * G_flat([a(1:i-1),izero,a(i+1:size(a))],y2) &
       + pending_integral([p,a(i-1)],i-1,[a(1:i-2),a(i:size(a)),y2]) &
       + pending_integral([p,a(i-1)],1,zeroes(0)) * G_flat(a,y2) &
       + pending_integral([p,a(i)], i, [a(1:i-1), a(i+1:size(a)),y2]) & 
@@ -189,22 +195,24 @@ CONTAINS
   END FUNCTION pending_integral
 
   RECURSIVE FUNCTION remove_sr_from_last_place_in_G(a,y2,m,sr) result(res)
-    complex(kind=prec) :: a(:), sr, res,y2
+    type(inum) :: a(:), sr, y2
+    complex(kind=prec) :: res
     integer :: m,i,j
     complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+m)/))/  & 
       (product((/(i,i=1,size(a))/))*product((/(i,i=1,m)/))), & 
       size(a) + m)
-    alpha = shuffle_product(a,[zeroes(m-1),sr])
+    alpha = shuffle_product(tocmplx(a),tocmplx([zeroes(m-1),sr]))
     res = G_flat(a,y2)*G_flat([zeroes(m-1),sr],y2)
     do j = 2,size(alpha,1)
-      res = res - G_flat(alpha(j,:),y2)
+      res = res - G_flat(toinum(alpha(j,:)),y2)
     end do
   END FUNCTION remove_sr_from_last_place_in_G
 
   RECURSIVE FUNCTION make_convergent(a,y2) result(res)
     ! goes from G-functions to pending integrals and simpler expressions according to (62),(64),(67) and (68)
 
-    complex(kind=prec) :: a(:), y2, res, sr
+    type(inum) :: a(:), y2, sr
+    complex(kind=prec) :: res
     integer :: i, mminus1
 
     res = 0
@@ -225,19 +233,19 @@ CONTAINS
       if(verb >= 30) then 
         print*, '--------------------------------------------------'
         print*, 'sr at beginning, map to: '
-        call print_G([cmplx(0), a(i+1:size(a))], y2)
+        call print_G([izero, a(i+1:size(a))], y2)
         call print_G([y2], sr)
         call print_G(a(i+1:size(a)), y2)
-        print*, 'PI with p=',real([sr, a(i+1)]),'i=',i,'g =', real([a(i+2:size(a)), y2])
+        print*, 'PI with p=',real(tocmplx([sr, a(i+1)])),'i=',i,'g =', real(tocmplx([a(i+2:size(a)), y2]))
         call print_G([a(i+1)], sr)
         call print_G(a(i+1:size(a)), y2)
         print*, '--------------------------------------------------'
       end if
 
-      res = G_flat([cmplx(0), a(i+1:size(a))], y2) &
+      res = G_flat([izero, a(i+1:size(a))], y2) &
         + G_flat([y2], sr) * G_flat(a(i+1:size(a)), y2) &
         + pending_integral([sr, a(i+1)], i, [a(i+2:size(a)), y2]) &
-        - G_flat([a(i+1)], sr) * G_flat(a(i+1:size(a)), y2)
+        - G_flat([a(i+1)],sr) * G_flat(a(i+1:size(a)), y2)
       return
     end if
 
@@ -245,17 +253,17 @@ CONTAINS
     if(verb >= 30) then 
       print*, '--------------------------------------------------'
       print*, 'sr in the middle, map to: '
-      call print_G([a(1:i-1),cmplx(0),a(i+1:size(a))],y2)
-      print*, 'PI with p=',real([sr,a(i-1)]),'i=', i-1,'g =', real([a(1:i-2),a(i+1:size(a)),y2])
+      call print_G([a(1:i-1),izero,a(i+1:size(a))],y2)
+      print*, 'PI with p=',real(tocmplx([sr,a(i-1)])),'i=', i-1,'g =', real(tocmplx([a(1:i-2),a(i+1:size(a)),y2]))
       call print_G([a(i-1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
-      print*, 'and PI with p=',real([sr,a(i+1)]),'i=',i,'g =', real([a(1:i-1),a(i+2:size(a)),y2])
+      print*, 'and PI with p=',real(tocmplx([sr,a(i+1)])),'i=',i,'g =', real(tocmplx([a(1:i-1),a(i+2:size(a)),y2]))
       call print_G([a(i+1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
       print*, '--------------------------------------------------'
     end if
 
-    res = G_flat([a(1:i-1),cmplx(0),a(i+1:size(a))],y2) &
+    res = G_flat([a(1:i-1),izero,a(i+1:size(a))],y2) &
       - pending_integral([sr,a(i-1)], i-1, [a(1:i-2),a(i+1:size(a)),y2])  &
       + G_flat([a(i-1)],sr) * G_flat([a(1:i-1),a(i+1:size(a))],y2)        &
       + pending_integral([sr,a(i+1)], i, [a(1:i-1),a(i+2:size(a)),y2])    &
@@ -264,24 +272,26 @@ CONTAINS
 
   RECURSIVE FUNCTION improve_convergence(z) result(res)
     ! improves the convergence by applying the Hoelder convolution to G(z1,...zk,1)
-    complex(kind=prec) :: z(:),oneminusz(size(z)), res
-    complex(kind=prec), parameter :: p = 2.0
+    type(inum) :: z(:),oneminusz(size(z))
+    complex(kind=prec) :: res
+    type(inum), parameter :: p = inum(2.0,+1)
     integer :: k, j
     if(verb >= 30) print*, 'requires Hoelder convolution'
-    oneminusz = 1-z
+    oneminusz = ione-z
     k = size(z)
 
-    res = G_flat(z,1.0/p) ! first term of the sum
-    res = res + (-1)**k * G_flat(oneminusz(k:1:-1), 1.0-1.0/p)
+    res = G_flat(z,ione/p) ! first term of the sum
+    res = res + (-1)**k * G_flat(oneminusz(k:1:-1), ione-ione/p)
     do j = 1,k-1
-      res = res + (-1)**j * G_flat(oneminusz(j:1:-1),1.0-1.0/p) * G_flat(z(j+1:k),1.0/p)
+      res = res + (-1)**j * G_flat(oneminusz(j:1:-1),ione-ione/p) * G_flat(z(j+1:k),ione/p)
     end do
   END FUNCTION improve_convergence
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
-    complex(kind=prec) :: z_flat(:), y, res
-    complex(kind=prec), allocatable :: z(:), s(:,:)
+    type(inum) :: z_flat(:), y
+    complex(kind=prec) :: res
+    type(inum), allocatable :: s(:,:), z(:)
     integer :: m_prime(size(z_flat)), condensed_size, kminusj, j, k, i, m_1
     integer, allocatable :: m(:)
     logical :: is_depth_one
@@ -307,7 +317,7 @@ CONTAINS
     if(all(abs(z_flat) < zero)) then
       if(verb >= 70) print*, 'all z are zero'
       res = log(y)**size(z_flat) / factorial(size(z_flat))
-      return
+    return
     end if
     if(size(z_flat) == 1) then
       if(verb >= 70) print*, 'is just a logarithm'
@@ -358,7 +368,7 @@ CONTAINS
     end if
 
     ! requires Hoelder convolution?
-    if( any(1.0 <= abs(z_flat/y) .and. abs(z_flat/y) <= 1.1) ) then
+    if( any(1.0 <= abs(z_flat%c/y%c) .and. abs(z_flat%c/y%c) <= 1.1) ) then
       res = improve_convergence(z_flat/y)
       return
     end if
@@ -385,21 +395,21 @@ CONTAINS
   FUNCTION G_superflat(g) result(res)
     ! simpler notation for flat evaluation
     complex(kind=prec) :: g(:), res
-    res = G_flat(g(1:size(g)-1), g(size(g)))
+    res = G_flat(toinum(g(1:size(g)-1)), inum(g(size(g)),di0))
   END FUNCTION G_superflat
 
   FUNCTION G_real(g) result(res)
     ! simpler notation for flat evaluation
     real(kind=prec) :: g(:)
     complex(kind=prec) :: res
-    res = G_flat(cmplx(g(1:size(g)-1)), cmplx(g(size(g))))
+    res = G_flat(toinum(cmplx(g(1:size(g)-1))), inum(cmplx(g(size(g))),di0))
   END FUNCTION G_real
 
   FUNCTION G_int(g) result(res)
     ! simpler notation for flat evaluation
     integer:: g(:)
     complex(kind=prec) :: res
-    res = G_flat(cmplx(g(1:size(g)-1)), cmplx(g(size(g))))
+    res = G_flat(toinum(cmplx(g(1:size(g)-1))), inum(cmplx(g(size(g))),di0))
   END FUNCTION G_int
 
   RECURSIVE FUNCTION G_condensed(m,z,y,k) result(res)
@@ -407,7 +417,8 @@ CONTAINS
     ! assumes zero arguments expressed through the m's
     
     integer :: m(:), k, i
-    complex(kind=prec) :: z(:), x(k), y, res, z_flat(sum(m))
+    type(inum) :: z(:), y, x(k), z_flat(sum(m))
+    complex(kind=prec) :: res
 
     ! print*, 'called G_condensed with args'
     ! print*, 'm = ', m
@@ -442,7 +453,7 @@ CONTAINS
     ! print*, 'computed using Li with '
     ! print*, 'm = ', m
     ! print*, 'x = ', x
-    res = (-1)**k * MPL(m,x)
+    res = (-1)**k * MPL(m,x%c)
   END FUNCTION G_condensed
 
 

@@ -11,22 +11,23 @@ MODULE ieps
 
   type(inum), parameter :: izero=inum( 0.,di0)
   type(inum), parameter :: imone=inum(-1.,di0)
+  type(inum), parameter :: ione=inum(+1.,di0)
 
 
   interface operator (*)
-    module procedure multinum
+    module procedure multinumss, multinumvs
   end interface operator (*)
   interface operator (+)
-    module procedure addinum
+    module procedure addinumss, addinumvs
   end interface operator (+)
   interface operator (-)
-    module procedure subinum
+    module procedure subinumss,subinumvs,subinumsv
   end interface operator (-)
   interface operator (**)
     module procedure powinum
   end interface operator (**)
   interface operator (/)
-    module procedure divint, divinum
+    module procedure divint, divinumss, divinumvs
   end interface operator (/)
   interface abs
     module procedure absinum, absinumv
@@ -34,35 +35,80 @@ MODULE ieps
   interface log
     module procedure loginum
   end interface log
-  
+
   interface toinum
     module procedure toinum_cmplx, toinum_real, toinum_int
   end interface toinum
+  interface tocmplx
+    module procedure tocmplxv, tocmplxs
+  end interface tocmplx
 CONTAINS
 
 
-  FUNCTION MULTINUM(n1, n2)
+  FUNCTION MULTINUMSS(n1, n2)
   implicit none
   type(inum), intent(in) :: n1, n2
-  type(inum) :: multinum
-  multinum = inum( n1%c*n2%c, int(sign(1._prec,real(n1%c)*n2%i0 + real(n2%c)*n1%i0)) )
-  END FUNCTION MULTINUM
+  type(inum) :: multinumss
+  multinumss = inum( n1%c*n2%c, int(sign(1._prec,real(n1%c)*n2%i0 + real(n2%c)*n1%i0)) )
+  END FUNCTION MULTINUMSS
 
- FUNCTION ADDINUM(n1, n2)
+  FUNCTION MULTINUMVS(n1, n2)
   implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: addinum
-  !TODO: what *is* the sum?
-  addinum = inum(n1%c + n2%c, n1%i0 ) 
-  END FUNCTION ADDINUM
+  type(inum), intent(in) :: n1(:), n2
+  type(inum) :: multinumvs(size(n1))
+  integer i
+  do i = 1,size(n1)
+    multinumvs(i) = inum( n1(i)%c*n2%c, int(sign(1._prec,real(n1(i)%c)*n2%i0 + real(n2%c)*n1(i)%i0)) )
+  enddo
+  END FUNCTION MULTINUMVS
 
-  FUNCTION SUBINUM(n1, n2)
+  FUNCTION ADDINUMSS(n1, n2)
   implicit none
   type(inum), intent(in) :: n1, n2
-  type(inum) :: subinum
+  type(inum) :: addinumss
   !TODO: what *is* the sum?
-  subinum = inum(n1%c - n2%c, n1%i0 ) 
-  END FUNCTION SUBINUM
+  addinumss = inum(n1%c + n2%c, n1%i0 )
+  END FUNCTION ADDINUMSS
+
+  FUNCTION ADDINUMVS(n1, n2)
+  implicit none
+  type(inum), intent(in) :: n1(:), n2
+  type(inum) :: addinumvs(size(n1))
+  !TODO: what *is* the sum?
+  integer i
+  do i = 1,size(n1)
+    addinumvs(i) = inum(n1(i)%c + n2%c, n1(i)%i0 )
+  enddo
+  END FUNCTION ADDINUMVS
+
+  FUNCTION SUBINUMSS(n1, n2)
+  implicit none
+  type(inum), intent(in) :: n1, n2
+  type(inum) :: subinumss
+  !TODO: what *is* the sum?
+  subinumss = inum(n1%c - n2%c, n1%i0 )
+  END FUNCTION SUBINUMSS
+
+  FUNCTION SUBINUMVS(n1, n2)
+  implicit none
+  type(inum), intent(in) :: n1(:), n2
+  type(inum) :: subinumvs(size(n1))
+  !TODO: what *is* the sum?
+  integer i
+  do i = 1,size(n1)
+    subinumvs(i) = inum(n1(i)%c - n2%c, n1(i)%i0 )
+  enddo
+  END FUNCTION SUBINUMvs
+  FUNCTION SUBINUMSV(n2, n1)
+  implicit none
+  type(inum), intent(in) :: n1(:), n2
+  type(inum) :: subinumsv(size(n1))
+  !TODO: what *is* the sum?
+  integer i
+  do i = 1,size(n1)
+    subinumsv(i) = inum(n2%c - n1(i)%c, n1(i)%i0 )
+  enddo
+  END FUNCTION SUBINUMSV
 
   FUNCTION ABSINUM(n1)
   implicit none
@@ -99,18 +145,28 @@ CONTAINS
   divint = inum( n1%c/m, n1%i0*sign(1,m))
   END FUNCTION DIVINT
 
-  FUNCTION DIVINUM(n1, n2)
+  FUNCTION DIVINUMss(n1, n2)
   implicit none
   type(inum), intent(in) :: n1, n2
-  type(inum) :: divinum
-  divinum = inum( n1%c/n2%c, int(sign(1., real(n2%c)*n1%i0 - real(n1%c)*n2%i0)))
-  END FUNCTION DIVINUM
+  type(inum) :: divinumss
+  divinumss = inum( n1%c/n2%c, int(sign(1., real(n2%c)*n1%i0 - real(n1%c)*n2%i0)))
+  END FUNCTION DIVINUMss
+
+  FUNCTION DIVINUMvs(n1, n2)
+  implicit none
+  type(inum), intent(in) :: n1(:), n2
+  type(inum) :: divinumvs(size(n1))
+  integer i
+  do i = 1,size(n1)
+    divinumvs(i) = inum( n1(i)%c/n2%c, int(sign(1., real(n2%c)*n1(i)%i0 - real(n1(i)%c)*n2%i0)))
+  enddo
+  END FUNCTION DIVINUMvs
 
   FUNCTION LOGINUM(n1)
   implicit none
   type(inum), intent(in) :: n1
-  type(inum) :: loginum
-  loginum = inum( log(n1%c), n1%i0 * int(sign(1._prec, real(n1%c))) )
+  complex(kind=prec) :: loginum
+  loginum = log(n1%c)
   END FUNCTION LOGINUM
 
 
@@ -129,7 +185,7 @@ CONTAINS
     toinum_cmplx(i) = inum(z(i), ss)
   enddo
   END FUNCTION TOINUM_cmplx
-  
+
   FUNCTION TOINUM_real(z, s)
   real(kind=prec) :: z(:)
   type(inum) :: toinum_real(size(z))
@@ -162,6 +218,17 @@ CONTAINS
     toinum_int(i) = inum(z(i), ss)
   enddo
   END FUNCTION TOINUM_int
+
+  FUNCTION TOCMPLXv(z)
+  type(inum) :: z(:)
+  complex(kind=prec) tocmplxv(size(z))
+  tocmplxv = z%c
+  END FUNCTION
+  FUNCTION TOCMPLXs(z)
+  type(inum) :: z
+  complex(kind=prec) tocmplxs
+  tocmplxs = z%c
+  END FUNCTION
 
 
 END MODULE IEPS

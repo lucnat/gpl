@@ -2,6 +2,7 @@
 
 MODULE utils
   use globals
+  use ieps
   implicit none
 
   ! logical :: print_enabled = .true.
@@ -11,7 +12,7 @@ CONTAINS
   
   FUNCTION  get_condensed_m(z) result(m)
     ! returns condensed m where the ones not needed are filled with 0 (returns same size as z)
-    complex(kind=prec), intent(in) :: z(:)
+    type(inum), intent(in) :: z(:)
     integer :: m(size(z)), pos, i 
     m = 1
     pos = 1
@@ -32,7 +33,7 @@ CONTAINS
   FUNCTION get_condensed_z(m, z_in) result(z_out)
     ! returns condensed z vector
     integer :: m(:), i, pos
-    complex(kind=prec) :: z_in(:), z_out(size(m)) 
+    type(inum) :: z_in(:), z_out(size(m))
     pos = 0
     do i=1,size(m)
       pos = pos + m(i)
@@ -43,8 +44,8 @@ CONTAINS
   FUNCTION  get_flattened_z(m,z_in) result(z_out)
     ! returns flattened version of z based on m and z
     integer :: m(:), i, pos
-    complex(kind=prec) :: z_in(:), z_out(sum(m))
-    z_out = 0
+    type(inum) :: z_in(:), z_out(sum(m))
+    z_out = izero
     pos = 0
     do i=1,size(m)
       pos = pos + m(i)
@@ -53,7 +54,7 @@ CONTAINS
   END FUNCTION get_flattened_z
 
   FUNCTION find_amount_trailing_zeros(z) result(res)
-    complex(kind=prec) :: z(:)
+    type(inum) :: z(:)
     integer :: res, i
     res = 0
     do i = size(z), 1, -1
@@ -105,8 +106,8 @@ CONTAINS
 
   FUNCTION zeroes(n) result(res)
     integer :: n
-    complex(kind=prec) :: res(n)
-    res = 0
+    type(inum) :: res(n)
+    res = izero
   END FUNCTION zeroes
 
   RECURSIVE FUNCTION factorial(n) result(res)
@@ -129,15 +130,15 @@ CONTAINS
 
   FUNCTION shuffle_with_zero(a) result(res)
     ! rows of result are shuffles of a with 0
-    complex :: a(:)
-    complex :: res(size(a)+1,size(a)+1)
+    type(inum) :: a(:)
+    type(inum) :: res(size(a)+1,size(a)+1)
     integer :: i,j, N
     N = size(a)+1
     do i = 1,N
       ! i is the index of the row
       ! j is the index of the zero
       j  = N+1-i
-      res(i,j) = 0
+      res(i,j) = izero
       res(i,1:j-1) = a(1:j-1)
       res(i,j+1:N) = a(j:)
     end do

@@ -72,7 +72,7 @@ CONTAINS
     character(len=*) :: test_id
 
     print*, '  ', 'testing GPL ', test_id, ' ...'
-    res = G_condensed(m,z,y,k)
+    res = G_condensed(m,toinum(z),inum(y,di0),k)
     call check(res,ref)
   end subroutine test_one_condensed
 
