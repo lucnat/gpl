@@ -64,7 +64,7 @@ CONTAINS
   SUBROUTINE print_G(z_flat, y)
     type(inum)  :: z_flat(:)
     type(inum) , optional :: y
-    if(present(y)) print*, 'G(', real(tocmplx(z_flat)), real(y%c), ')'
+    if(present(y)) print*, 'G(', real(z_flat), real(y), ')'
     if(.not. present(y)) print*, 'G(', abs(z_flat), ')'
   END SUBROUTINE print_G
 
@@ -73,25 +73,25 @@ CONTAINS
     integer :: m, i, j, n
     type(inum) :: a(:), y2, s(m), p(:)
     complex(kind=prec) :: res
-    complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+size(s))/))/  & 
+    type(inum) :: alpha(product((/(i,i=1,size(a)+size(s))/))/  &
         (product((/(i,i=1,size(a))/))*product((/(i,i=1,size(s))/))), & 
         size(a) + size(s))
 
     s = [zeroes(m-1),inum(cmplx(42e50),di0)]
-    alpha = shuffle_product(tocmplx(a),tocmplx(s))
+    alpha = shuffle_product(a,s)
     if(verb >= 50) then
       print*, 'mapping to '
       call print_G(a,y2)
-      print*, 'PI with p=',real(tocmplx(p)),'i=',m,'g =',real(tocmplx([zeroes(m-1),y2]))
+      print*, 'PI with p=',real(p),'i=',m,'g =',real([zeroes(m-1),y2])
     end if
     res = GPL(a,y2)*pending_integral(p,m,[zeroes(m-1),y2])
     if(verb >= 50) print*, 'also mapping to'
     do j = 2,size(alpha, 1)
       ! find location of s_r
-      n = find_first_true(abs(alpha(j,:) - 42e50) < zero)
-      if(verb >= 50) print*, 'PI with p=',real(tocmplx(p)),'i=',n,'g =',&
-          real([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),tocmplx(y2)])
-      res = res - pending_integral(p, n, [toinum(alpha(j,1:n-1)),toinum(alpha(j,n+1:size(alpha,2))),y2])
+      n = find_first_true(abs(tocmplx(alpha(j,:)) - 42e50) < zero)
+      if(verb >= 50) print*, 'PI with p=',real(p),'i=',n,'g =',&
+          real([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
+      res = res - pending_integral(p, n, [alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
     end do
   END FUNCTION remove_sr_from_last_place_in_PI
 
@@ -103,7 +103,7 @@ CONTAINS
     integer :: i, m
     res = 0
 
-    if(verb >= 30) print*, 'evaluating PI with p=',real(tocmplx(p)),'i=',real(i),'g =',real(tocmplx(g))
+    if(verb >= 30) print*, 'evaluating PI with p=',real(p),'i=',real(i),'g =',real(g)
 
     y1 = p(1)
     b = p(2:size(p))
@@ -143,9 +143,9 @@ CONTAINS
       if(verb >= 50) then 
         print*, 'map to'
         print*, 'zeta(',m,')'
-        print*, 'PI with p=',real(tocmplx(p)),'i=',0,'g =',tocmplx(zeroes(0))
-        print*, 'PI with p=',real(tocmplx([y2,izero])),'i=',m-1,'g =',tocmplx([zeroes(m-2),y2])
-        print*, 'PI with p=',real(tocmplx(p)),'i=',0,'g =',tocmplx(zeroes(0))
+        print*, 'PI with p=',real(p),'i=',0,'g =',tocmplx(zeroes(0))
+        print*, 'PI with p=',real([y2,izero]),'i=',m-1,'g =',tocmplx([zeroes(m-2),y2])
+        print*, 'PI with p=',real(p),'i=',0,'g =',tocmplx(zeroes(0))
         print*, 'PI with p=',tocmplx([p,izero]),'i=',m-1,'g =',tocmplx(zeroes(0))
       end if
       res = -zeta(m)*pending_integral(p,0,zeroes(0)) &
@@ -160,12 +160,12 @@ CONTAINS
       
       if(verb >= 50) then
         print*, 'map to (using 68)'
-        print*, 'PI with p=',real(tocmplx(p)),'i=',0,'g =',tocmplx(zeroes(0) )
+        print*, 'PI with p=',real(p),'i=',0,'g =',tocmplx(zeroes(0) )
         call print_G([izero,a],y2)
-        print*, 'PI with p=',real(tocmplx([p,y2])),'i=',0,'g =',tocmplx(zeroes(0) )
+        print*, 'PI with p=',real([p,y2]),'i=',0,'g =',tocmplx(zeroes(0) )
         call print_G(a,y2)
-        print*, 'PI with p=',real(tocmplx([p,a(1)])),'i=',1,'g =',real(tocmplx([a(2:size(a)),y2]))
-        print*, 'PI with p=',real(tocmplx([p,a(1)])),'i=',0,'g =',tocmplx(zeroes(0))
+        print*, 'PI with p=',real([p,a(1)]),'i=',1,'g =',real([a(2:size(a)),y2])
+        print*, 'PI with p=',real([p,a(1)]),'i=',0,'g =',tocmplx(zeroes(0))
         call print_G(a,y2)
       end if
 
@@ -198,13 +198,13 @@ CONTAINS
     type(inum) :: a(:), sr, y2
     complex(kind=prec) :: res
     integer :: m,i,j
-    complex(kind=prec) :: alpha(product((/(i,i=1,size(a)+m)/))/  & 
+    type(inum) :: alpha(product((/(i,i=1,size(a)+m)/))/  &
       (product((/(i,i=1,size(a))/))*product((/(i,i=1,m)/))), & 
       size(a) + m)
-    alpha = shuffle_product(tocmplx(a),tocmplx([zeroes(m-1),sr]))
+    alpha = shuffle_product(a,[zeroes(m-1),sr])
     res = G_flat(a,y2)*G_flat([zeroes(m-1),sr],y2)
     do j = 2,size(alpha,1)
-      res = res - G_flat(toinum(alpha(j,:)),y2)
+      res = res - G_flat(alpha(j,:),y2)
     end do
   END FUNCTION remove_sr_from_last_place_in_G
 
@@ -236,7 +236,7 @@ CONTAINS
         call print_G([izero, a(i+1:size(a))], y2)
         call print_G([y2], sr)
         call print_G(a(i+1:size(a)), y2)
-        print*, 'PI with p=',real(tocmplx([sr, a(i+1)])),'i=',i,'g =', real(tocmplx([a(i+2:size(a)), y2]))
+        print*, 'PI with p=',real([sr, a(i+1)]),'i=',i,'g =', real([a(i+2:size(a)), y2])
         call print_G([a(i+1)], sr)
         call print_G(a(i+1:size(a)), y2)
         print*, '--------------------------------------------------'
@@ -254,10 +254,10 @@ CONTAINS
       print*, '--------------------------------------------------'
       print*, 'sr in the middle, map to: '
       call print_G([a(1:i-1),izero,a(i+1:size(a))],y2)
-      print*, 'PI with p=',real(tocmplx([sr,a(i-1)])),'i=', i-1,'g =', real(tocmplx([a(1:i-2),a(i+1:size(a)),y2]))
+      print*, 'PI with p=',real([sr,a(i-1)]),'i=', i-1,'g =', real([a(1:i-2),a(i+1:size(a)),y2])
       call print_G([a(i-1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
-      print*, 'and PI with p=',real(tocmplx([sr,a(i+1)])),'i=',i,'g =', real(tocmplx([a(1:i-1),a(i+2:size(a)),y2]))
+      print*, 'and PI with p=',real([sr,a(i+1)]),'i=',i,'g =', real([a(1:i-1),a(i+2:size(a)),y2])
       call print_G([a(i+1)],sr)
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
       print*, '--------------------------------------------------'

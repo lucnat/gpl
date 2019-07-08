@@ -42,6 +42,9 @@ MODULE ieps
   interface tocmplx
     module procedure tocmplxv, tocmplxs
   end interface tocmplx
+  interface real
+    module procedure realis, realiv
+  end interface real
 CONTAINS
 
 
@@ -230,5 +233,16 @@ CONTAINS
   tocmplxs = z%c
   END FUNCTION
 
+
+  FUNCTION REALIV(z)
+  type(inum) :: z(:)
+  real(kind=prec) realiv(size(z))
+  realiv = real(z%c)
+  END FUNCTION
+  FUNCTION REALIS(z)
+  type(inum) :: z
+  real(kind=prec) realis
+  realis = real(z%c)
+  END FUNCTION
 
 END MODULE IEPS
