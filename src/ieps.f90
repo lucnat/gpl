@@ -28,6 +28,9 @@ MODULE ieps
   interface real
     module procedure realis, realiv
   end interface real
+  interface aimag
+    module procedure imags, imagv
+  end interface aimag
 CONTAINS
   FUNCTION ABSINUM(n1)
   implicit none
@@ -113,6 +116,17 @@ CONTAINS
   type(inum) :: z
   real(kind=prec) realis
   realis = real(z%c)
+  END FUNCTION
+
+  FUNCTION IMAGV(z)
+  type(inum) :: z(:)
+  real(kind=prec) imagv(size(z))
+  imagv = aimag(z%c)
+  END FUNCTION
+  FUNCTION IMAGS(z)
+  type(inum) :: z
+  real(kind=prec) imags
+  imags = aimag(z%c)
   END FUNCTION
 
 END MODULE IEPS

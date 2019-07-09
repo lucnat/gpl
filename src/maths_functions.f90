@@ -337,6 +337,7 @@ CONTAINS
     type(inum) :: x, y
     integer m
     complex(kind=prec) :: res
+    !TODO!!
     res=polylog1(m,inum(x%c/y%c,di0))
   END FUNCTION POLYLOG2
 
@@ -346,6 +347,7 @@ CONTAINS
   implicit none
   type(inum) :: a,b
   complex(kind=prec) plog1
+  !TODO!!
   plog1 = log(1.-a%c/b%c)
   END FUNCTION
 

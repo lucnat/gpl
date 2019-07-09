@@ -18,7 +18,15 @@ CONTAINS
     integer :: l
     type(inum) :: y
     complex(kind=prec) :: GPL_zero_zi
-    GPL_zero_zi = 1.0_prec/factorial(l) * log(y%c) ** l
+    if (abs(aimag(y)).lt.zero) then
+      if (real(y).gt.0) then
+        GPL_zero_zi = 1.0_prec/factorial(l) * log(real(y)) ** l
+      else
+        GPL_zero_zi = 1.0_prec/factorial(l) * (log(-real(y))-cmplx(0,y%i0*pi)) ** l
+      endif
+    else
+      GPL_zero_zi = 1.0_prec/factorial(l) * log(y%c) ** l
+    endif
   END FUNCTION GPL_zero_zi
 
   FUNCTION is_convergent(z,y)
@@ -102,8 +110,9 @@ CONTAINS
       if(verb >= 30) print*, 'case depth one and m = 1'
       !res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
       !  + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
+      !TODO
       res = pending_integral(p,2,[g(1)]) - pending_integral(p,2,[izero]) &
-        + G_flat(p(2:size(p)), p(1)) * (log(-g(1)%c)+cmplx(0,2*pi))
+        + G_flat(p(2:size(p)), p(1)) * conjg(log(-g(1)%c))
       return
     end if
   
@@ -251,9 +260,16 @@ CONTAINS
     complex(kind=prec), parameter :: p = 2.0
     integer :: k, j
     if(verb >= 30) print*, 'requires Hoelder convolution'
-    !TODO ieps?!??
+    ! In the Hoelder expression, all the (1-z) are -i0.. GiNaC does something
+    ! different (and confusing, l. 1035). As we do, they usually would set
+    ! i0 -> -z%i0. However, if Im[z] == 0 and Re[z] >= 1, they just set it to
+    ! i0 -> +i0, be damned what it was before.
     do j=1,size(z)
-      oneminusz(j) = inum(1.-z(j)%c,-z(j)%i0)
+      if ( (abs(aimag(z(j))) .lt. zero).and.( real(z(j)) .ge. 1) ) then
+        oneminusz(j) = inum(1.-z(j)%c, +1)
+      else
+        oneminusz(j) = inum(1.-z(j)%c,-z(j)%i0)
+      endif
     enddo
     k = size(z)
 
@@ -266,7 +282,7 @@ CONTAINS
 
   RECURSIVE FUNCTION G_flat(z_flat,y) result(res)
     ! Calls G function with flat arguments, that is, zeroes not passed through the m's. 
-    type(inum) :: z_flat(:), y
+    type(inum) :: z_flat(:), y, znorm(size(z_flat))
     complex(kind=prec) :: res
     type(inum), allocatable :: s(:,:), z(:)
     integer :: m_prime(size(z_flat)), condensed_size, kminusj, j, k, i, m_1
@@ -292,13 +308,14 @@ CONTAINS
     ! is just a logarithm? 
     if(all(abs(z_flat) < zero)) then
       if(verb >= 70) print*, 'all z are zero'
-      res = log(y%c)**size(z_flat) / factorial(size(z_flat))
-    return
+      res = gpl_zero_zi(size(z_flat),y)
+      return
     end if
     if(size(z_flat) == 1) then
       if(verb >= 70) print*, 'is just a logarithm'
       if(abs(z_flat(1)) <= zero) then 
-        res = log(y%c)
+        ! This shouldn't happen!
+        res = gpl_zero_zi(1,y)
         return 
       end if
       res = plog1(y,z_flat(1))  ! log((z_flat(1) - y)/z_flat(1))
@@ -327,7 +344,7 @@ CONTAINS
       if(verb >= 30) print*, 'need to remove trailing zeroes'
       allocate(s(j,j))
       s = shuffle_with_zero(z_flat(1:j-1))
-      res = log(y%c)*G_flat(z_flat(1:size(z_flat)-1),y)
+      res = GPL_zero_zi(1,y)*G_flat(z_flat(1:size(z_flat)-1),y)
       do i = 1,size(s,1)
         res = res - G_flat([s(i,:),z_flat(j),zeroes(kminusj-1)], y)
       end do
@@ -345,8 +362,13 @@ CONTAINS
 
     ! requires Hoelder convolution?
     if( any(1.0 <= abs(z_flat%c/y%c) .and. abs(z_flat%c/y%c) <= 1.1) ) then
-      !TODO
-      res = improve_convergence(toinum(z_flat%c/y%c))
+      ! Here we just *assume* that y is positive and doesn't mess up the
+      ! ieps, which is what GiNaC does (l. 1013)
+      ! TODO
+      do j=1,size(z_flat)
+        znorm(j) = inum(z_flat(j)%c/y%c, z_flat(j)%i0)
+      enddo
+      res = improve_convergence(znorm)
       return
     end if
 
