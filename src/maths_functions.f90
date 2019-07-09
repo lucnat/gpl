@@ -255,6 +255,48 @@ CONTAINS
    end if
   END FUNCTION trilog
 
+  FUNCTION BERNOULLI_POLYNOMIAL(n, x) result(res)
+    integer n
+    complex(kind=prec) :: x, res
+    select case(n)
+      case(1)
+        res = -1/2. + x
+      case(2)
+        res = 1/6. - x + x**2
+      case(3)
+        res = x/2. - 3*x**2/2. + x**3
+      case(4)
+        res = -1/30. + x**2 - 2*x**3 + x**4
+      case(5)
+        res = -x/6. + 5*x**3/3 - 5*x**4/2 + x**5
+      case(6)
+        res = 1/42. - x**2/2 + 5*x**4/2 - 3*x**5 + x**6
+      case(7)
+        res = x/6. - 7*x**3/6 + 7*x**5/2 - 7*x**6/2 + x**7
+      case(8)
+        res = -1/30. + 2*x**2/3 - 7*x**4/3 + 14*x**6/3 - 4*x**7 + x**8
+      case(9)
+        res = -3*x/10 + 2*x**3 - 21*x**5/5 + 6*x**7 - 9*x**8/2 + x**9
+      case(10)
+        res = 5/66. - 3*x**2/2 + 5*x**4 - 7*x**6 + 15*x**8/2 - 5*x**9 + x**10
+      case(11)
+        res = 5*x/6 - 11*x**3/2 + 11*x**5 - 11*x**7 + 55*x**9/6 - 11*x**10/2 + x**11
+      case(12)
+        res = -691/2730. + 5*x**2 - 33*x**4/2 + 22*x**6 - 33*x**8/2 + 11*x**10 - 6*x**11 + x**12
+      case(13)
+        res = -691*x/210 + 65*x**3/3 - 429*x**5/10 + 286*x**7/7 - 143*x**9/6 + 13*x**11 - 13*x**12/2 + x**13
+      case(14)
+        res = 7/6. - 691*x**2/30 + 455*x**4/6 - 1001*x**6/10 + 143*x**8/2 - 1001*x**10/30 + 91*x**12/6 - 7*x**13 + x**14
+      case(15)
+        res = 35*x/2 - 691*x**3/6 + 455*x**5/2 - 429*x**7/2 + 715*x**9/6 - 91*x**11/2 + 35*x**13/2 - 15*x**14/2 + x**15
+      case default
+        print*,"Bernoulli beyond 15 is not implemented"
+        stop
+    end select
+
+
+  END FUNCTION
+
   FUNCTION polylog(m,x) result(res)
     ! computes the polylog
     
@@ -271,7 +313,12 @@ CONTAINS
     else if(m == 3) then
       res = trilog(x)
     else
-      res = naive_polylog(m,x)
+      if (abs(x).gt.1) then
+        res = (-1)**(m-1)*naive_polylog(m,1./x) &
+            - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*clog(-x)/2/pi) / factorial(m)
+      else
+        res = naive_polylog(m,x)
+      endif
     end if
   END FUNCTION polylog
 
