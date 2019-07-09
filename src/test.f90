@@ -130,8 +130,8 @@ CONTAINS
     ref = (-8.403785974849544e-6,0.0)
     call test_one_flat(cmplx([-1./xchen,0.,-1./xchen,1./(xchen*z),1.0]),ref,'3.5')
     
-    ! ref = cmplx((0.4925755847450199,2.6389214054743295))
-    ! call test_one_flat(cmplx([-1.,-1.,z,z,1.]),ref,'3.6')
+    ref = cmplx((0.4925755847450199,2.6389214054743295))
+    call test_one_flat(cmplx([-1.,-1.,z,z,1.]),ref,'3.6')
     
     ! ref = cmplx((-0.0015317713178859967,-0.00045003911367000565))
     ! call test_one_flat(cmplx([0.,0.,(1-sqrt(1-z**2))/(xchen*z), 1./(xchen*z),1.]),ref,'3.7')
@@ -176,7 +176,6 @@ CONTAINS
 
 
   end subroutine do_GPL_tests
-  
   
   ! subroutine do_shuffle_tests() 
   !   complex(kind=prec) :: v(2) = cmplx((/1,2/))
