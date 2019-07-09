@@ -176,36 +176,3 @@ CONTAINS
   ! end subroutine warn
 
 END MODULE utils
-
-
-! PROGRAM test
-!   use globals
-!   use  utils
-!   implicit none
-  
-!   complex(kind=prec) :: z(4)
-!   integer :: m_prime(4), condensed_size
-!   z = cmplx((/0.0,1.7,0.0,0.0/))
-
-!   ! transform to condensed notation
-!   m_prime = get_condensed_m(z)
-!   print*, abs(z)
-!   m_prime = get_condensed_m(z)
-!   print*, abs(z)
-!   if(find_first_zero(m_prime) == -1) then
-!     condensed_size = size(m_prime)
-!   else
-!     condensed_size = find_first_zero(m_prime)-1 
-!   end if
-!   print*, condensed_size
-
-
-! END  PROGRAM test
-
-
-
-! Contains some functions that might be useful later
-
-! Write your own print function with ability to suppress print
-! Muss immer alle prints und warnings ausschalten können
-! Test Programm schreiben mit exit codes -> gfortran 'test.f90' und dann 'echo $?'

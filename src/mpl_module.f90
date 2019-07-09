@@ -7,18 +7,6 @@ MODULE mpl_module
 
 CONTAINS 
 
-  FUNCTION polylog_series(m,x,n_passed) result(res)
-    ! Computes the classical polylogarithm Li_m(x) using series representation up to order n
-    integer :: m
-    integer, optional :: n_passed
-    complex(kind=prec) :: x, res
-    integer :: i,n
-    integer, allocatable :: j(:)
-    n = merge(n_passed,GPLInfinity,present(n_passed))  
-    j = (/(i, i=1,n,1)/) 
-    res = sum(x**j / j**m)
-  END FUNCTION polylog_series
-
   FUNCTION MPL_converges(m,x)
     ! checks if the MPL converges 
     complex(kind=prec) :: x(:)
@@ -45,30 +33,24 @@ CONTAINS
     if(size(m) /= size(x)) then
       print*, 'Error: m and x must have the same length'
     end if
-    
+
+    res = 0
+
+
     if(size(m) == 1) then
-      ! base case
-      res = polylog_series(m(1),x(1), n)
+      ! base case, we get a polylog
+      do i = 1, n
+    if(i**m(1) < 0) return ! roll over
+    if(abs(x(1)**i) < 1.e-250) return
+        res = res + x(1)**i / i**m(1)
+      end do
     else 
       ! recursion step
-      res = 0
       do i = 1, n    
         res = res + x(1)**i / i**m(1) * MPL(m(2:), x(2:), i - 1)
       end do
-
-      ! a nicer way to do it would be but problem is i
-      ! i = (/(j, j=1,n, 1)/)
-      ! res = sum( x(1)**i / i**m(1) * MPL(m(2:), x(2:), i(1) - 1) )
-      ! we could get around this problem by rewriting MPL to operate on each i and returning an array
       
     end if
   END FUNCTION MPL
 
 END MODULE mpl_module
-
-! PROGRAM test
-!   use mpl_module
-!   logical :: result
-!   result = MPL_converges( dcmplx((/1.0d0,.7d0,.3d0/)), (/ 1,2,1 /) )
-!   print*, result
-! end PROGRAM test

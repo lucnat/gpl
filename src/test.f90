@@ -19,7 +19,6 @@ PROGRAM TEST
   call do_GPL_tests()
   ! call do_shuffle_tests() ! put this somewhere else
 
-
   if(tests_successful) then
     print*, 'All tests passed. '
   else 
@@ -133,8 +132,8 @@ CONTAINS
     ref = cmplx((0.4925755847450199,2.6389214054743295))
     call test_one_flat(cmplx([-1.,-1.,z,z,1.]),ref,'3.6')
     
-    ! ref = cmplx((-0.0015317713178859967,-0.00045003911367000565))
-    ! call test_one_flat(cmplx([0.,0.,(1-sqrt(1-z**2))/(xchen*z), 1./(xchen*z),1.]),ref,'3.7')
+    ref = cmplx((-0.0015317713178859967,-0.00045003911367000565))
+    call test_one_flat(cmplx([0.,0.,(1-sqrt(1-z**2))/(xchen*z), 1./(xchen*z),1.]),ref,'3.7')
 
 
     ! here the chen integral tests start
@@ -171,7 +170,7 @@ CONTAINS
     call test_one_flat(cmplx([0.01, -1.0, 0.01, 1.]),ref,'4.10')
 
     ref = (-0.012539108315054982, -0.015414250168437678)
-    call test_one_flat(cmplx([0.01, 199.99499987499374, 0.01, 1.]),ref,'4.10')
+    call test_one_flat(cmplx([0.01, 199.99499987499374, 0.01, 1.]),ref,'4.11')
 
 
 
