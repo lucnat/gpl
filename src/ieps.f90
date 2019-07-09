@@ -15,27 +15,9 @@ MODULE ieps
   type(inum), parameter :: marker=inum(0.,5)
 
 
-  interface operator (*)
-    module procedure multinumss, multinumvs
-  end interface operator (*)
-  interface operator (+)
-    module procedure addinumss, addinumvs
-  end interface operator (+)
-  interface operator (-)
-    module procedure subinumss,subinumvs,subinumsv
-  end interface operator (-)
-  interface operator (**)
-    module procedure powinum
-  end interface operator (**)
-  interface operator (/)
-    module procedure divint, divinumss, divinumvs
-  end interface operator (/)
   interface abs
     module procedure absinum, absinumv
   end interface abs
-  interface log
-    module procedure loginum
-  end interface log
 
   interface toinum
     module procedure toinum_cmplx, toinum_real, toinum_int
@@ -47,79 +29,6 @@ MODULE ieps
     module procedure realis, realiv
   end interface real
 CONTAINS
-
-  FUNCTION NEG(n1)
-  implicit none
-  type(inum), intent(in) :: n1
-  type(inum) :: neg
-  neg = inum(-n1%c,-n1%i0)
-  END FUNCTION
-
-  FUNCTION MULTINUMSS(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: multinumss
-  multinumss = inum( n1%c*n2%c, int(sign(1._prec,real(n1%c)*n2%i0 + real(n2%c)*n1%i0)) )
-  END FUNCTION MULTINUMSS
-
-  FUNCTION MULTINUMVS(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1(:), n2
-  type(inum) :: multinumvs(size(n1))
-  integer i
-  do i = 1,size(n1)
-    multinumvs(i) = inum( n1(i)%c*n2%c, int(sign(1._prec,real(n1(i)%c)*n2%i0 + real(n2%c)*n1(i)%i0)) )
-  enddo
-  END FUNCTION MULTINUMVS
-
-  FUNCTION ADDINUMSS(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: addinumss
-  !TODO: what *is* the sum?
-  addinumss = inum(n1%c + n2%c, n1%i0 )
-  END FUNCTION ADDINUMSS
-
-  FUNCTION ADDINUMVS(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1(:), n2
-  type(inum) :: addinumvs(size(n1))
-  !TODO: what *is* the sum?
-  integer i
-  do i = 1,size(n1)
-    addinumvs(i) = inum(n1(i)%c + n2%c, n1(i)%i0 )
-  enddo
-  END FUNCTION ADDINUMVS
-
-  FUNCTION SUBINUMSS(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: subinumss
-  !TODO: what *is* the sum?
-  subinumss = inum(n1%c - n2%c, n1%i0 )
-  END FUNCTION SUBINUMSS
-
-  FUNCTION SUBINUMVS(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1(:), n2
-  type(inum) :: subinumvs(size(n1))
-  !TODO: what *is* the sum?
-  integer i
-  do i = 1,size(n1)
-    subinumvs(i) = inum(n1(i)%c - n2%c, n1(i)%i0 )
-  enddo
-  END FUNCTION SUBINUMvs
-  FUNCTION SUBINUMSV(n2, n1)
-  implicit none
-  type(inum), intent(in) :: n1(:), n2
-  type(inum) :: subinumsv(size(n1))
-  !TODO: what *is* the sum?
-  integer i
-  do i = 1,size(n1)
-    subinumsv(i) = inum(n2%c - n1(i)%c, n1(i)%i0 )
-  enddo
-  END FUNCTION SUBINUMSV
-
   FUNCTION ABSINUM(n1)
   implicit none
   type(inum), intent(in) :: n1
@@ -133,59 +42,6 @@ CONTAINS
   real(kind=prec) :: absinumv(size(n1))
   absinumv = abs(n1%c)
   END FUNCTION ABSINUMV
-
-
-  FUNCTION POWINUM(n1, m)
-  implicit none
-  type(inum), intent(in) :: n1
-  integer, intent(in) :: m
-  type(inum) :: powinum
-  if (aimag(n1%c)<zero) then
-    powinum = inum( cmplx(real(n1%c)**m,0.), int(sign(1._prec,real(n1%c)**m)) )
-  else
-    powinum = inum( n1%c**m, n1%i0 )
-  endif
-  END FUNCTION POWINUM
-
-  FUNCTION DIVINT(n1, m)
-  implicit none
-  type(inum), intent(in) :: n1
-  integer, intent(in) :: m
-  type(inum) :: divint
-  divint = inum( n1%c/m, n1%i0*sign(1,m))
-  END FUNCTION DIVINT
-
-  FUNCTION DIVINUMss(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: divinumss
-  divinumss = inum( n1%c/n2%c, int(sign(1., real(n2%c)*n1%i0 - real(n1%c)*n2%i0)))
-  END FUNCTION DIVINUMss
-
-  FUNCTION DIVINUMvs(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1(:), n2
-  type(inum) :: divinumvs(size(n1))
-  integer i
-  do i = 1,size(n1)
-    divinumvs(i) = inum( n1(i)%c/n2%c, int(sign(1., real(n2%c)*n1(i)%i0 - real(n1(i)%c)*n2%i0)))
-  enddo
-  END FUNCTION DIVINUMvs
-
-  FUNCTION LOGINUM(n1)
-  implicit none
-  type(inum), intent(in) :: n1
-  complex(kind=prec) :: loginum
-  if (abs(aimag(n1%c)).lt.zero) then
-    loginum = log(abs(real(n1%c)))
-    if (real(n1%c)<0) then
-      loginum = loginum + cmplx(0,n1%i0*pi)
-    endif
-  else
-    loginum = log(n1%c)
-  endif
-  END FUNCTION LOGINUM
-
 
   FUNCTION TOINUM_cmplx(z, s)
   complex(kind=prec) :: z(:)

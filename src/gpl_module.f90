@@ -18,7 +18,7 @@ CONTAINS
     integer :: l
     type(inum) :: y
     complex(kind=prec) :: GPL_zero_zi
-    GPL_zero_zi = 1.0_prec/factorial(l) * log(y) ** l
+    GPL_zero_zi = 1.0_prec/factorial(l) * log(y%c) ** l
   END FUNCTION GPL_zero_zi
 
   FUNCTION is_convergent(z,y)
@@ -103,7 +103,7 @@ CONTAINS
       !res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
       !  + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       res = pending_integral(p,2,[g(1)]) - pending_integral(p,2,[izero]) &
-        + G_flat(p(2:size(p)), p(1)) * log(neg(g(1)))
+        + G_flat(p(2:size(p)), p(1)) * (log(-g(1)%c)+cmplx(0,2*pi))
       return
     end if
   
@@ -248,16 +248,19 @@ CONTAINS
     ! improves the convergence by applying the Hoelder convolution to G(z1,...zk,1)
     type(inum) :: z(:),oneminusz(size(z))
     complex(kind=prec) :: res
-    type(inum), parameter :: p = inum(2.0,+1)
+    complex(kind=prec), parameter :: p = 2.0
     integer :: k, j
     if(verb >= 30) print*, 'requires Hoelder convolution'
-    oneminusz = ione-z
+    !TODO ieps?!??
+    do j=1,size(z)
+      oneminusz(j) = inum(1.-z(j)%c,-z(j)%i0)
+    enddo
     k = size(z)
 
-    res = G_flat(z,ione/p) ! first term of the sum
-    res = res + (-1)**k * G_flat(oneminusz(k:1:-1), ione-ione/p)
+    res = G_flat(z,inum(1./p,di0)) ! first term of the sum
+    res = res + (-1)**k * G_flat(oneminusz(k:1:-1), inum(1.-1/p,di0))
     do j = 1,k-1
-      res = res + (-1)**j * G_flat(oneminusz(j:1:-1),ione-ione/p) * G_flat(z(j+1:k),ione/p)
+      res = res + (-1)**j * G_flat(oneminusz(j:1:-1),inum(1.-1/p,di0)) * G_flat(z(j+1:k),inum(1./p,di0))
     end do
   END FUNCTION improve_convergence
 
@@ -274,7 +277,7 @@ CONTAINS
 
 
     if(size(z_flat) == 1) then
-      if( abs(z_flat(1) - y) <= zero ) then
+      if( abs(z_flat(1)%c - y%c) <= zero ) then
         res = 0
         return
       end if
@@ -289,16 +292,16 @@ CONTAINS
     ! is just a logarithm? 
     if(all(abs(z_flat) < zero)) then
       if(verb >= 70) print*, 'all z are zero'
-      res = log(y)**size(z_flat) / factorial(size(z_flat))
+      res = log(y%c)**size(z_flat) / factorial(size(z_flat))
     return
     end if
     if(size(z_flat) == 1) then
       if(verb >= 70) print*, 'is just a logarithm'
       if(abs(z_flat(1)) <= zero) then 
-        res = log(y)
+        res = log(y%c)
         return 
       end if
-      res = log((z_flat(1) - y)/z_flat(1))
+      res = plog1(y,z_flat(1))  ! log((z_flat(1) - y)/z_flat(1))
       return
     end if
 
@@ -309,7 +312,7 @@ CONTAINS
     if(is_depth_one) then
       ! case m >= 2, other already handled above
       if(verb >= 70) print*, 'is just a polylog'
-      res = -polylog(m_1,y/z_flat(m_1))
+      res = -polylog(m_1, y, z_flat(m_1))!-polylog(m_1,y/z_flat(m_1))
       return
     end if
 
@@ -324,7 +327,7 @@ CONTAINS
       if(verb >= 30) print*, 'need to remove trailing zeroes'
       allocate(s(j,j))
       s = shuffle_with_zero(z_flat(1:j-1))
-      res = log(y)*G_flat(z_flat(1:size(z_flat)-1),y)
+      res = log(y%c)*G_flat(z_flat(1:size(z_flat)-1),y)
       do i = 1,size(s,1)
         res = res - G_flat([s(i,:),z_flat(j),zeroes(kminusj-1)], y)
       end do
@@ -342,7 +345,8 @@ CONTAINS
 
     ! requires Hoelder convolution?
     if( any(1.0 <= abs(z_flat%c/y%c) .and. abs(z_flat%c/y%c) <= 1.1) ) then
-      res = improve_convergence(z_flat/y)
+      !TODO
+      res = improve_convergence(toinum(z_flat%c/y%c))
       return
     end if
 
@@ -390,8 +394,8 @@ CONTAINS
     ! assumes zero arguments expressed through the m's
     
     integer :: m(:), k, i
-    type(inum) :: z(:), y, x(k), z_flat(sum(m))
-    complex(kind=prec) :: res
+    type(inum) :: z(:), y, z_flat(sum(m))
+    complex(kind=prec) :: res, x(k)
 
     ! print*, 'called G_condensed with args'
     ! print*, 'm = ', m
@@ -418,15 +422,15 @@ CONTAINS
       res = G_flat(z_flat,y)
       return
     end if
-
-    x(1) = y/z(1)
+    !TODO is that okay?
+    x(1) = y%c/z(1)%c
     do i = 2,k
-      x(i) = z(i-1)/z(i)
+      x(i) = z(i-1)%c/z(i)%c
     end do
     ! print*, 'computed using Li with '
     ! print*, 'm = ', m
     ! print*, 'x = ', x
-    res = (-1)**k * MPL(m,x%c)
+    res = (-1)**k * MPL(m,x)
   END FUNCTION G_condensed
 
 

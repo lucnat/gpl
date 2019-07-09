@@ -3,6 +3,9 @@ MODULE maths_functions
   use globals
   use utils
   implicit none
+  interface polylog
+    module procedure polylog1, polylog2
+  end interface polylog
 
 CONTAINS 
   FUNCTION zeta(n)
@@ -297,11 +300,11 @@ CONTAINS
 
   END FUNCTION
 
-  RECURSIVE FUNCTION polylog(m,x) result(res)
+  RECURSIVE FUNCTION polylog1(m,x) result(res)
     ! computes the polylog
     
     integer :: m
-    type(inum) :: x
+    type(inum) :: x, inv
     complex(kind=prec) :: res
     
     if(verb >= 70) print*, 'called polylog(',m,',',x%c,x%i0,')'
@@ -312,8 +315,9 @@ CONTAINS
       res = -(1. - 2.**(1-m))*zeta(m)
       return
     else if (abs(x) .gt. 1) then
-      res = (-1)**(m-1)*polylog(m,ione/x) &
-          - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*log(neg(x))/2/pi) / factorial(m)
+      inv = inum(1./x%c, x%i0)
+      res = (-1)**(m-1)*polylog(m,inv) &
+          - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*conjg(log(-x%c))/2/pi) / factorial(m)
       return
     endif
 
@@ -324,7 +328,26 @@ CONTAINS
     else
       res = naive_polylog(m,x%c)
     end if
-  END FUNCTION polylog
+  END FUNCTION polylog1
+
+
+
+
+  RECURSIVE FUNCTION polylog2(m,x,y) result(res)
+    type(inum) :: x, y
+    integer m
+    complex(kind=prec) :: res
+    res=polylog1(m,inum(x%c/y%c,di0))
+  END FUNCTION POLYLOG2
+
+
+  FUNCTION PLOG1(a,b)
+  ! calculates log(1-a/b)
+  implicit none
+  type(inum) :: a,b
+  complex(kind=prec) plog1
+  plog1 = log(1.-a%c/b%c)
+  END FUNCTION
 
 END MODULE maths_functions
 
