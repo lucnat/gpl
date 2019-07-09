@@ -460,9 +460,9 @@ CONTAINS
 
   FUNCTION G_SUPERFLATN(c0,n)
     integer, intent(in) :: n
-    complex(kind=prec), intent(in) :: c0(n)
+    type(inum), intent(in) :: c0(n)
     complex(kind=prec) g_superflatn
-    G_superflatn=G_superflat(c0)
+    G_superflatn = G_flat(c0(1:n-1), c0(n))
   END FUNCTION
 
 END MODULE gpl_module
