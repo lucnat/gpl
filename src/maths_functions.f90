@@ -4,9 +4,6 @@ MODULE maths_functions
   use utils
   implicit none
 
-  interface polylog
-    module procedure polylogcmplx,polyloginum
-  end interface polylog
 CONTAINS 
   FUNCTION zeta(n)
     real(kind=prec) :: values(9), zeta
@@ -258,13 +255,6 @@ CONTAINS
    end if
   END FUNCTION trilog
 
-  FUNCTION polyloginum(m,x) result(res)
-    integer :: m
-    type(inum) :: x
-    complex(kind=prec) :: res
-    res = polylog(m,x%c)
-  END FUNCTION polyloginum
-
   FUNCTION BERNOULLI_POLYNOMIAL(n, x) result(res)
     integer n
     complex(kind=prec) :: x, res
@@ -307,30 +297,35 @@ CONTAINS
 
   END FUNCTION
 
-  FUNCTION polylogcmplx(m,x) result(res)
+  RECURSIVE FUNCTION polylog(m,x) result(res)
     ! computes the polylog
     
     integer :: m
-    complex(kind=prec) :: x,res
+    type(inum) :: x
+    complex(kind=prec) :: res
     
-    if(verb >= 70) print*, 'called polylog(',m,',',x,')'
-    if ((m.le.9).and.(abs(x-1.).lt.zero)) then
+    if(verb >= 70) print*, 'called polylog(',m,',',x%c,x%i0,')'
+    if ((m.le.9).and.(abs(x%c-1.).lt.zero)) then
       res = zeta(m)
-    else if ((m.le.9).and.(abs(x+1.).lt.zero)) then
+      return
+    else if ((m.le.9).and.(abs(x%c+1.).lt.zero)) then
       res = -(1. - 2.**(1-m))*zeta(m)
-    else if(m == 2) then
-      res = dilog(x)
+      return
+    else if (abs(x) .gt. 1) then
+      print*,imone*x
+      res = (-1)**(m-1)*polylog(m,ione/x) &
+          - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*log(imone*x)/2/pi) / factorial(m)
+      return
+    endif
+
+    if(m == 2) then
+      res = dilog(x%c)
     else if(m == 3) then
-      res = trilog(x)
+      res = trilog(x%c)
     else
-      if (abs(x).gt.1) then
-        res = (-1)**(m-1)*naive_polylog(m,1./x) &
-            - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*clog(-x)/2/pi) / factorial(m)
-      else
-        res = naive_polylog(m,x)
-      endif
+      res = naive_polylog(m,x%c)
     end if
-  END FUNCTION polylogcmplx
+  END FUNCTION polylog
 
 END MODULE maths_functions
 

@@ -170,7 +170,14 @@ CONTAINS
   implicit none
   type(inum), intent(in) :: n1
   complex(kind=prec) :: loginum
-  loginum = log(n1%c)
+  if (abs(aimag(n1%c)).lt.zero) then
+    loginum = log(abs(real(n1%c)))
+    if (real(n1%c)<0) then
+      loginum = loginum + cmplx(0,n1%i0*pi)
+    endif
+  else
+    loginum = log(n1%c)
+  endif
   END FUNCTION LOGINUM
 
 
