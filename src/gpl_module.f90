@@ -172,11 +172,11 @@ CONTAINS
     ! case higher depth, s_r in middle, use my (67)
     if(verb >= 30) print*, 's_r in the middle under PI'
 
-    res =  -pending_integral(p,1,zeroes(0)) * G_flat([a(1:i-1),cmplx(0.0),a(i+1:size(a))],y2) &
-      + pending_integral([p,a(i-1)],i-1,[a(1:i-2),a(i:size(a)),y2]) &
-      + pending_integral([p,a(i-1)],1,zeroes(0)) * G_flat(a,y2) &
-      + pending_integral([p,a(i)], i, [a(1:i-1), a(i+1:size(a)),y2]) & 
-      - pending_integral([p,a(i)],1,zeroes(0)) * G_flat(a,y2)
+    res =  +pending_integral(p,1,zeroes(0)) * G_flat([a(1:i-1),cmplx(0.0),a(i:size(a))],y2) & !64
+      - pending_integral([p,a(i-1)],i-1,[a(1:i-2),a(i:size(a)),y2]) & ! 67a
+      + pending_integral([p,a(i-1)],1,zeroes(0)) * G_flat(a,y2) & ! 67c
+      + pending_integral([p,a(i)], i, [a(1:i-1), a(i+1:size(a)),y2])  & !67b
+      - pending_integral([p,a(i)],1,zeroes(0)) * G_flat(a,y2) !67a
   END FUNCTION pending_integral
 
   RECURSIVE FUNCTION remove_sr_from_last_place_in_G(a,y2,m,sr) result(res)
