@@ -312,9 +312,8 @@ CONTAINS
       res = -(1. - 2.**(1-m))*zeta(m)
       return
     else if (abs(x) .gt. 1) then
-      print*,imone*x
       res = (-1)**(m-1)*polylog(m,ione/x) &
-          - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*log(imone*x)/2/pi) / factorial(m)
+          - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*log(neg(x))/2/pi) / factorial(m)
       return
     endif
 

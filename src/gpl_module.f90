@@ -103,7 +103,7 @@ CONTAINS
       !res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
       !  + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       res = pending_integral(p,2,[g(1)]) - pending_integral(p,2,[izero]) &
-        + G_flat(p(2:size(p)), p(1)) * log(imone*g(1))
+        + G_flat(p(2:size(p)), p(1)) * log(neg(g(1)))
       return
     end if
   

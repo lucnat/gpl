@@ -48,6 +48,12 @@ MODULE ieps
   end interface real
 CONTAINS
 
+  FUNCTION NEG(n1)
+  implicit none
+  type(inum), intent(in) :: n1
+  type(inum) :: neg
+  neg = inum(-n1%c,-n1%i0)
+  END FUNCTION
 
   FUNCTION MULTINUMSS(n1, n2)
   implicit none
