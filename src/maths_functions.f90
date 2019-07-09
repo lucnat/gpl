@@ -5,6 +5,15 @@ MODULE maths_functions
   implicit none
 
 CONTAINS 
+  FUNCTION zeta(n)
+    real(kind=prec) :: values(9), zeta
+    integer :: n
+    values = (/1.6449340668482262, 1.2020569031595942, 1.0823232337111381, &
+               1.03692775514337, 1.0173430619844488, 1.008349277381923, &
+               1.0040773561979441, 1.0020083928260821, 1.000994575127818/)
+    zeta = values(n-1)
+  END FUNCTION zeta
+
 
   FUNCTION naive_polylog(m,x) result(res)
     ! Computes the classical polylogarithm Li_m(x) using series representation up to order n
@@ -253,7 +262,11 @@ CONTAINS
     complex(kind=prec) :: x,res
     
     if(verb >= 70) print*, 'called polylog(',m,',',x,')'
-    if(m == 2) then
+    if ((m.le.9).and.(abs(x-1.).lt.zero)) then
+      res = zeta(m)
+    else if ((m.le.9).and.(abs(x+1.).lt.zero)) then
+      res = -(1. - 2.**(1-m))*zeta(m)
+    else if(m == 2) then
       res = dilog(x)
     else if(m == 3) then
       res = trilog(x)
