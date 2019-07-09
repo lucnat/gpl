@@ -11,10 +11,13 @@ CONTAINS
     integer :: m
     complex(kind=prec) :: x, res
     integer :: i,n
-    integer, allocatable :: j(:)
     n = 1000
-    j = (/(i, i=1,n,1)/) 
-    res = sum(x**j / j**m)
+    res=0.
+    do i=1,n
+      if(i**m.lt.0) return ! roll over
+      if(abs(x**i).lt.1.e-250) return
+      res = res+x**i/i**m
+    enddo
   END FUNCTION naive_polylog
 
   FUNCTION Li2(x)

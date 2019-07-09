@@ -67,7 +67,7 @@ CONTAINS
     if(.not. present(y)) print*, 'G(', abs(z_flat), ')'
   END SUBROUTINE print_G
 
-  FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
+  RECURSIVE FUNCTION remove_sr_from_last_place_in_PI(a,y2,m,p) result(res)
     ! here what is passed is not the full a vector, only a1, ..., ak without the trailing zeroes
     integer :: m, i, j, n
     complex(kind=prec) :: a(:), y2, s(m), p(:), res
@@ -127,7 +127,7 @@ CONTAINS
       return
     end if
   
-    a = g(1:size(p)-1)
+    a = g(1:size(g)-1)
     y2 = g(size(g)) 
     m = size(g)  ! actually, size(g)-1+1
 
