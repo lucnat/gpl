@@ -126,18 +126,6 @@ CONTAINS
     res = merge(1,n*factorial(n-1),n==0)
   END FUNCTION factorial
 
-  FUNCTION add_ieps(x) result(res)
-    ! adds small imaginary part to x
-    complex(kind=prec) :: x, res
-    res = x + (0.0,epsilon)
-  END FUNCTION add_ieps
-
-  FUNCTION sub_ieps(x) result(res)
-    ! subtracts small imaginary part to x
-    complex(kind=prec) :: x, res
-    res = x - (0.0,epsilon)
-  END FUNCTION sub_ieps
-
   FUNCTION shuffle_with_zero(a) result(res)
     ! rows of result are shuffles of a with 0
     type(inum) :: a(:)

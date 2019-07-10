@@ -124,19 +124,15 @@ CONTAINS
   END FUNCTION Li2
 
   RECURSIVE FUNCTION dilog(x) result(res)
-    ! evaluates dilog for any argument
+    ! evaluates dilog for any argument |x|<1
     complex(kind=prec) :: res
     complex(kind=prec) :: x
 
-    if(abs(x) <= 1.0) then
-      if(abs(aimag(x)) < zero ) then
-        res = Li2(real(x))
-      else
-        res = naive_polylog(2,x)
-      endif
+    if(abs(aimag(x)) < zero ) then
+      res = Li2(real(x))
     else
-     res = -dilog(1/x) - (pi**2) /6 - log(add_ieps(-x))**2 / 2
-   end if
+      res = naive_polylog(2,x)
+    endif
   END FUNCTION dilog
 
   FUNCTION Li3(x)
@@ -244,18 +240,14 @@ CONTAINS
   END FUNCTION Li3
 
   FUNCTION trilog(x) result(res)
-    ! evaluates trilog for any argument
+    ! evaluates trilog for any argument |x|<1
     complex(kind=prec) :: res
     complex(kind=prec) :: x
-    if(abs(x) <= 1.0) then
-      if(abs(aimag(x)) < zero ) then
-        res = Li3(real(x))
-      else
-        res = naive_polylog(3,x)
-      endif
+    if(abs(aimag(x)) < zero ) then
+      res = Li3(real(x))
     else
-     res = naive_polylog(3,sub_ieps(x)**(-1)) - (log(-sub_ieps(x)))**3/6 - pi**2/6 * log(-sub_ieps(x))
-   end if
+      res = naive_polylog(3,x)
+    endif
   END FUNCTION trilog
 
   FUNCTION BERNOULLI_POLYNOMIAL(n, x) result(res)
