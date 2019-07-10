@@ -11,59 +11,27 @@ MODULE ieps
 
   type(inum), parameter :: izero=inum( 0.,di0)
   type(inum), parameter :: imone=inum(-1.,di0)
+  type(inum), parameter :: ione=inum(+1.,di0)
+  type(inum), parameter :: marker=inum(0.,5)
 
 
-  interface operator (*)
-    module procedure multinum
-  end interface operator (*)
-  interface operator (+)
-    module procedure addinum
-  end interface operator (+)
-  interface operator (-)
-    module procedure subinum
-  end interface operator (-)
-  interface operator (**)
-    module procedure powinum
-  end interface operator (**)
-  interface operator (/)
-    module procedure divint, divinum
-  end interface operator (/)
   interface abs
     module procedure absinum, absinumv
   end interface abs
-  interface log
-    module procedure loginum
-  end interface log
-  
+
   interface toinum
     module procedure toinum_cmplx, toinum_real, toinum_int
   end interface toinum
+  interface tocmplx
+    module procedure tocmplxv, tocmplxs
+  end interface tocmplx
+  interface real
+    module procedure realis, realiv
+  end interface real
+  interface aimag
+    module procedure imags, imagv
+  end interface aimag
 CONTAINS
-
-
-  FUNCTION MULTINUM(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: multinum
-  multinum = inum( n1%c*n2%c, int(sign(1._prec,real(n1%c)*n2%i0 + real(n2%c)*n1%i0)) )
-  END FUNCTION MULTINUM
-
- FUNCTION ADDINUM(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: addinum
-  !TODO: what *is* the sum?
-  addinum = inum(n1%c + n2%c, n1%i0 ) 
-  END FUNCTION ADDINUM
-
-  FUNCTION SUBINUM(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: subinum
-  !TODO: what *is* the sum?
-  subinum = inum(n1%c - n2%c, n1%i0 ) 
-  END FUNCTION SUBINUM
-
   FUNCTION ABSINUM(n1)
   implicit none
   type(inum), intent(in) :: n1
@@ -77,42 +45,6 @@ CONTAINS
   real(kind=prec) :: absinumv(size(n1))
   absinumv = abs(n1%c)
   END FUNCTION ABSINUMV
-
-
-  FUNCTION POWINUM(n1, m)
-  implicit none
-  type(inum), intent(in) :: n1
-  integer, intent(in) :: m
-  type(inum) :: powinum
-  if (aimag(n1%c)<zero) then
-    powinum = inum( cmplx(real(n1%c)**m,0.), int(sign(1._prec,real(n1%c)**m)) )
-  else
-    powinum = inum( n1%c**m, n1%i0 )
-  endif
-  END FUNCTION POWINUM
-
-  FUNCTION DIVINT(n1, m)
-  implicit none
-  type(inum), intent(in) :: n1
-  integer, intent(in) :: m
-  type(inum) :: divint
-  divint = inum( n1%c/m, n1%i0*sign(1,m))
-  END FUNCTION DIVINT
-
-  FUNCTION DIVINUM(n1, n2)
-  implicit none
-  type(inum), intent(in) :: n1, n2
-  type(inum) :: divinum
-  divinum = inum( n1%c/n2%c, int(sign(1., real(n2%c)*n1%i0 - real(n1%c)*n2%i0)))
-  END FUNCTION DIVINUM
-
-  FUNCTION LOGINUM(n1)
-  implicit none
-  type(inum), intent(in) :: n1
-  type(inum) :: loginum
-  loginum = inum( log(n1%c), n1%i0 * int(sign(1._prec, real(n1%c))) )
-  END FUNCTION LOGINUM
-
 
   FUNCTION TOINUM_cmplx(z, s)
   complex(kind=prec) :: z(:)
@@ -129,7 +61,7 @@ CONTAINS
     toinum_cmplx(i) = inum(z(i), ss)
   enddo
   END FUNCTION TOINUM_cmplx
-  
+
   FUNCTION TOINUM_real(z, s)
   real(kind=prec) :: z(:)
   type(inum) :: toinum_real(size(z))
@@ -163,5 +95,38 @@ CONTAINS
   enddo
   END FUNCTION TOINUM_int
 
+  FUNCTION TOCMPLXv(z)
+  type(inum) :: z(:)
+  complex(kind=prec) tocmplxv(size(z))
+  tocmplxv = z%c
+  END FUNCTION
+  FUNCTION TOCMPLXs(z)
+  type(inum) :: z
+  complex(kind=prec) tocmplxs
+  tocmplxs = z%c
+  END FUNCTION
+
+
+  FUNCTION REALIV(z)
+  type(inum) :: z(:)
+  real(kind=prec) realiv(size(z))
+  realiv = real(z%c)
+  END FUNCTION
+  FUNCTION REALIS(z)
+  type(inum) :: z
+  real(kind=prec) realis
+  realis = real(z%c)
+  END FUNCTION
+
+  FUNCTION IMAGV(z)
+  type(inum) :: z(:)
+  real(kind=prec) imagv(size(z))
+  imagv = aimag(z%c)
+  END FUNCTION
+  FUNCTION IMAGS(z)
+  type(inum) :: z
+  real(kind=prec) imags
+  imags = aimag(z%c)
+  END FUNCTION
 
 END MODULE IEPS

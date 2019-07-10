@@ -3,6 +3,9 @@ MODULE maths_functions
   use globals
   use utils
   implicit none
+  interface polylog
+    module procedure polylog1, polylog2
+  end interface polylog
 
 CONTAINS 
   FUNCTION zeta(n)
@@ -120,19 +123,15 @@ CONTAINS
   END FUNCTION Li2
 
   RECURSIVE FUNCTION dilog(x) result(res)
-    ! evaluates dilog for any argument
+    ! evaluates dilog for any argument |x|<1
     complex(kind=prec) :: res
     complex(kind=prec) :: x
 
-    if(abs(x) <= 1.0) then
-      if(abs(aimag(x)) < zero ) then
-        res = Li2(real(x))
-      else
-        res = naive_polylog(2,x)
-      endif
+    if(abs(aimag(x)) < zero ) then
+      res = Li2(real(x))
     else
-     res = -dilog(1/x) - (pi**2) /6 - log(add_ieps(-x))**2 / 2
-   end if
+      res = naive_polylog(2,x)
+    endif
   END FUNCTION dilog
 
   FUNCTION Li3(x)
@@ -240,18 +239,14 @@ CONTAINS
   END FUNCTION Li3
 
   FUNCTION trilog(x) result(res)
-    ! evaluates trilog for any argument
+    ! evaluates trilog for any argument |x|<1
     complex(kind=prec) :: res
     complex(kind=prec) :: x
-    if(abs(x) <= 1.0) then
-      if(abs(aimag(x)) < zero ) then
-        res = Li3(real(x))
-      else
-        res = naive_polylog(3,x)
-      endif
+    if(abs(aimag(x)) < zero ) then
+      res = Li3(real(x))
     else
-     res = naive_polylog(3,sub_ieps(x)**(-1)) - (log(-sub_ieps(x)))**3/6 - pi**2/6 * log(-sub_ieps(x))
-   end if
+      res = naive_polylog(3,x)
+    endif
   END FUNCTION trilog
 
   FUNCTION BERNOULLI_POLYNOMIAL(n, x) result(res)
@@ -296,30 +291,56 @@ CONTAINS
 
   END FUNCTION
 
-  FUNCTION polylog(m,x) result(res)
+  RECURSIVE FUNCTION polylog1(m,x) result(res)
     ! computes the polylog
     
     integer :: m
-    complex(kind=prec) :: x,res
+    type(inum) :: x, inv
+    complex(kind=prec) :: res
     
-    if(verb >= 70) print*, 'called polylog(',m,',',x,')'
-    if ((m.le.9).and.(abs(x-1.).lt.zero)) then
+    if(verb >= 70) print*, 'called polylog(',m,',',x%c,x%i0,')'
+    if ((m.le.9).and.(abs(x%c-1.).lt.zero)) then
       res = zeta(m)
-    else if ((m.le.9).and.(abs(x+1.).lt.zero)) then
+      return
+    else if ((m.le.9).and.(abs(x%c+1.).lt.zero)) then
       res = -(1. - 2.**(1-m))*zeta(m)
-    else if(m == 2) then
-      res = dilog(x)
+      return
+    else if (abs(x) .gt. 1) then
+      inv = inum(1./x%c, x%i0)
+      res = (-1)**(m-1)*polylog(m,inv) &
+          - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*conjg(log(-x%c))/2/pi) / factorial(m)
+      return
+    endif
+
+    if(m == 2) then
+      res = dilog(x%c)
     else if(m == 3) then
-      res = trilog(x)
+      res = trilog(x%c)
     else
-      if (abs(x).gt.1) then
-        res = (-1)**(m-1)*naive_polylog(m,1./x) &
-            - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*clog(-x)/2/pi) / factorial(m)
-      else
-        res = naive_polylog(m,x)
-      endif
+      res = naive_polylog(m,x%c)
     end if
-  END FUNCTION polylog
+  END FUNCTION polylog1
+
+
+
+
+  RECURSIVE FUNCTION polylog2(m,x,y) result(res)
+    type(inum) :: x, y
+    integer m
+    complex(kind=prec) :: res
+    !TODO!!
+    res=polylog1(m,inum(x%c/y%c,di0))
+  END FUNCTION POLYLOG2
+
+
+  FUNCTION PLOG1(a,b)
+  ! calculates log(1-a/b)
+  implicit none
+  type(inum) :: a,b
+  complex(kind=prec) plog1
+  !TODO!!
+  plog1 = log(1.-a%c/b%c)
+  END FUNCTION
 
 END MODULE maths_functions
 
