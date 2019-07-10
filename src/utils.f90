@@ -88,18 +88,6 @@ CONTAINS
     end do
   END FUNCTION find_first_zero
 
-  FUNCTION find_first_true(v) result(res)
-    ! returns index of first element in v that is true
-    logical :: v(:)
-    integer :: i, res
-    do i = 1, size(v)
-      if(v(i)) then
-        res = i
-        return
-      end if
-    end do
-  END FUNCTION find_first_true
-
   FUNCTION min_index(v)
     ! returns the index of the smallest element in v
     real(kind=prec) :: v(:), minimum
