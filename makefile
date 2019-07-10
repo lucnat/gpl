@@ -1,11 +1,17 @@
 MODE=DEBUG
+HAVE_GINAC=1
 
 
 FC=gfortran
 AR=ar rcs
 CC=gcc
 MCC=mcc
+ifeq ($(HAVE_GINAC),1)
+LD=g++
+LFLAGS=-lgfortran
+else
 LD=gfortran
+endif
 
 FFLAGS=-fdefault-real-8 -cpp -pedantic-errors -std=f2008
 FFLAGS+= -Werror -Wall -Wno-maybe-uninitialized -Wno-uninitialized 
@@ -16,6 +22,11 @@ else
   FFLAGS += -O0 -frange-check -g -fcheck=all -Wextra
   FFLAGS += -ffpe-trap=invalid,overflow -fdump-core -fbacktrace
 endif
+
+ifeq ($(HAVE_GINAC),1)
+FFLAGS += -DHAVE_GINAC
+endif
+
 
 files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o
 objects = $(addprefix build/,$(files))
@@ -31,6 +42,9 @@ build/%.o: src/%.f90
 		@echo "F90 $@"
 		@$(FC) $(FFLAGS) -c $< -J build -o $@
 
+build/%.o: src/%.cpp
+		@echo "C++ $@"
+		@$(CC) -c $<  -o $@
 
 # Mathlink related
 
@@ -61,11 +75,18 @@ gpl: build/gpl.o libgpl.a build/mcc.internals
 
 eval: libgpl.a build/eval.o
 		@echo "LD $@"
-		@$(LD) -o $@ build/eval.o -L. -lgpl
+		@$(LD) -o $@ build/eval.o -L. -lgpl $(LFLAGS)
 
+ifeq ($(HAVE_GINAC),1)
+test: $(objects) build/ginac.o build/test.o
+		@echo "LD $@"
+		@$(LD) -o $@ $^ -lcln -lginac $(LFLAGS)
+else
 test: $(objects) build/test.o
 		@echo "LD $@"
-		@$(LD) -o $@ $^ $(LFLAGS)
+		$(LD) -o $@ $^ $(LFLAGS)
+endif
+
 
 check: test
 		./$<
