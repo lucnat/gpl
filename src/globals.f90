@@ -2,16 +2,22 @@
 MODULE globals
   implicit none
 
+
   integer, parameter :: prec = selected_real_kind(15,32)  
-  integer, parameter :: GPLInfinity = 30   ! the default outermost expansion order for MPLs
+
   real, parameter :: epsilon = 1e-20       ! used for the small imaginary part
   real, parameter :: zero = 1e-15          ! values smaller than this count as zero
   real, parameter :: pi = 3.14159265358979323846
 
+  ! The following parameters control the accuracy of the evaluation
+  integer :: MPLInfinity = 30               ! the default outermost expansion order for MPLs, formerly GPLInfinity
+  integer :: PolylogInfinity = 1000         ! expansion order for Polylogs
+  real(kind=prec) :: HoelderCircle = 1.1    ! when to apply Hoelder convolution? 
+
   integer :: verb = 0
 
 CONTAINS 
-
+  
   SUBROUTINE parse_cmd_args
     integer :: i
     character(len=32) :: arg

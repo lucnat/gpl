@@ -331,15 +331,13 @@ CONTAINS
     end if
 
     ! requires Hoelder convolution?
-    if( any(1.0 <= abs(z_flat/y) .and. abs(z_flat/y) <= 1.1) ) then
+    if( any(1.0 <= abs(z_flat/y) .and. abs(z_flat/y) <= HoelderCircle) ) then
       res = improve_convergence(z_flat/y)
       return
     end if
 
-
-
     ! thus it is convergent, and has no trailing zeros
-    ! -> evaluate in condensed notation -> which will give series representation
+    ! -> evaluate in condensed notation which will give series representation
     m_prime = get_condensed_m(z_flat)
     if(find_first_zero(m_prime) == -1) then
       condensed_size = size(m_prime)

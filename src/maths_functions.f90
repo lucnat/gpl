@@ -19,10 +19,9 @@ CONTAINS
     ! Computes the classical polylogarithm Li_m(x) using series representation up to order n
     integer :: m
     complex(kind=prec) :: x, res
-    integer :: i,n
-    n = 1000
+    integer :: i
     res=0.
-    do i=1,n
+    do i=1,PolylogInfinity
       if(i**m.lt.0) return ! roll over
       if(abs(x**i).lt.1.e-250) return
       res = res+x**i/i**m

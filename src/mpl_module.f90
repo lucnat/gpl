@@ -28,7 +28,7 @@ CONTAINS
     integer, optional :: n_passed
     integer :: i, n
 
-    n = merge(n_passed,GPLInfinity,present(n_passed))  
+    n = merge(n_passed,MPLInfinity,present(n_passed))  
 
     if(size(m) /= size(x)) then
       print*, 'Error: m and x must have the same length'
