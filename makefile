@@ -17,7 +17,7 @@ FFLAGS=-fdefault-real-8 -cpp -pedantic-errors -std=f2008
 FFLAGS+= -Werror -Wall -Wno-maybe-uninitialized -Wno-uninitialized 
 
 ifeq ($(MODE),RELEASE)
-  FFLAGS += -O3 -funroll-loops -Wtabs -DRELEASE
+  FFLAGS += -O3 -march=native -mtune=native -DRELEASE
 else
   FFLAGS += -O0 -frange-check -g -fcheck=all -Wextra -DDEBUG
   FFLAGS += -ffpe-trap=invalid,overflow -fdump-core -fbacktrace
