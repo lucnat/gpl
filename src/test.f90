@@ -99,7 +99,7 @@ CONTAINS
     character(len=*) :: test_id
 
     print*, '  ', 'testing GPL ', test_id, ' ...'
-    res = GPL(z)
+    res = G(z)
     call check(res,ref)
   end subroutine test_one_flat
 
@@ -1288,12 +1288,12 @@ CONTAINS
     if (ginacwhat=="values") then
       print*, '  ', 'testing GPL ', test_id, ' ...'
       ref = geval(z,size(z))
-      res = GPL(z)
+      res = G(z)
       call check(res,ref)
     elseif (ginacwhat=="speed1") then
       ref = geval(z,size(z))
     elseif (ginacwhat=="speed2") then
-      res = GPL(z)
+      res = G(z)
     endif
   end subroutine
   subroutine do_muone_tests(x,y,msg)

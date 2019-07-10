@@ -8,9 +8,9 @@ MODULE globals
   real, parameter :: pi = 3.14159265358979323846
 
   ! The following parameters control the accuracy of the evaluation
-  integer :: MPLInfinity = 30               ! the default outermost expansion order for MPLs, formerly GPLInfinity
-  integer :: PolylogInfinity = 1000         ! expansion order for Polylogs
-  real(kind=prec) :: HoelderCircle = 1.1    ! when to apply Hoelder convolution? 
+  integer, protected :: MPLInfinity = 30               ! the default outermost expansion order for MPLs, formerly GPLInfinity
+  integer, protected :: PolylogInfinity = 1000         ! expansion order for Polylogs
+  real(kind=prec), protected :: HoelderCircle = 1.1    ! when to apply Hoelder convolution?
 
   integer :: verb = 0
 
@@ -35,5 +35,13 @@ CONTAINS
     end do
   END SUBROUTINE parse_cmd_args
 #endif
+
+  SUBROUTINE SET_OPTIONS(mplinf, liinf, hcircle)
+    real(kind=prec), optional :: hcircle
+    integer, optional :: mplinf, liinf
+    if (present(mplinf)) MPLInfinity = mplinf
+    if (present(liinf)) PolyLogInfinity = liinf
+    if (present(hcircle)) HoelderCircle = hcircle
+  END SUBROUTINE
 
 END MODULE globals

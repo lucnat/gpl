@@ -8,9 +8,9 @@ MODULE gpl_module
   use ieps
   implicit none
 
-  INTERFACE GPL
+  INTERFACE G
     module procedure G_flat, G_condensed, G_superflat, G_real, G_int
-  END INTERFACE GPL
+  END INTERFACE G
 CONTAINS 
 
   FUNCTION GPL_zero_zi(l,y)
@@ -68,7 +68,7 @@ CONTAINS
       print*, 'PI with p=',real(p),'i=',m,'g =',real([zeroes(m-1),y2])
     end if
 #endif
-    res = GPL(a,y2)*pending_integral(p,m,[zeroes(m-1),y2])
+    res = G_flat(a,y2)*pending_integral(p,m,[zeroes(m-1),y2])
 #ifdef DEBUG
     if(verb >= 50) print*, 'also mapping to'
 #endif

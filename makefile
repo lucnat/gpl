@@ -28,7 +28,7 @@ FFLAGS += -DHAVE_GINAC
 endif
 
 
-files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o
+files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o GPL.o
 objects = $(addprefix build/,$(files))
 
 all: libgpl.a gpl eval test
