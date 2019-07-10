@@ -61,18 +61,24 @@ CONTAINS
 
     s = [zeroes(m-1),marker]
     alpha = shuffle_product(a,s)
+#ifdef DEBUG
     if(verb >= 50) then
       print*, 'mapping to '
       call print_G(a,y2)
       print*, 'PI with p=',real(p),'i=',m,'g =',real([zeroes(m-1),y2])
     end if
+#endif
     res = GPL(a,y2)*pending_integral(p,m,[zeroes(m-1),y2])
+#ifdef DEBUG
     if(verb >= 50) print*, 'also mapping to'
+#endif
     do j = 2,size(alpha, 1)
       ! find location of s_r
       n = find_marker(alpha(j,:))
+#ifdef DEBUG
       if(verb >= 50) print*, 'PI with p=',real(p),'i=',n,'g =',&
           real([alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
+#endif
       res = res - pending_integral(p, n, [alpha(j,1:n-1),alpha(j,n+1:size(alpha,2)),y2])
     end do
   END FUNCTION remove_sr_from_last_place_in_PI
@@ -85,21 +91,27 @@ CONTAINS
     integer :: i, m
     res = 0
 
+#ifdef DEBUG
     if(verb >= 30) print*, 'evaluating PI with p=',real(p),'i=',real(i),'g =',real(g)
+#endif
 
     y1 = p(1)
     b = p(2:size(p))
 
     ! if integration variable is not in G-function
     if(i == 0 .or. size(g) == 0) then
+#ifdef DEBUG
       if(verb >= 30) print*, 'only integrals in front, we get G-function'
+#endif
       res = G_flat(b,y1)
       return
     end if
 
     ! if integration variable at end -> we gat a G function 
     if(i == size(g)+1) then
+#ifdef DEBUG
       if(verb >= 30) print*, 'is just a G-function'
+#endif
       res = G_flat([p(2:size(p)),g], p(1))
       return
     end if
@@ -107,7 +119,9 @@ CONTAINS
 
     ! if depth one and m = 1 use my (59)
     if(size(g) == 1) then
+#ifdef DEBUG
       if(verb >= 30) print*, 'case depth one and m = 1'
+#endif
       !res = pending_integral(p,2,[sub_ieps(g(1))]) - pending_integral(p,2,[cmplx(0.0)]) &
       !  + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       !TODO
@@ -122,6 +136,7 @@ CONTAINS
 
     ! if depth one and m > 1 use my (60)
     if(all( abs( g(1:size(g)-1) ) < zero)) then       
+#ifdef DEBUG
       if(verb >= 30) print*, 'case depth one and m > 1'
       if(verb >= 50) then 
         print*, 'map to'
@@ -131,6 +146,7 @@ CONTAINS
         print*, 'PI with p=',real(p),'i=',0,'g =',tocmplx(zeroes(0))
         print*, 'PI with p=',tocmplx([p,izero]),'i=',m-1,'g =',tocmplx(zeroes(0))
       end if
+#endif
       res = -zeta(m)*pending_integral(p,0,zeroes(0)) &
         + pending_integral([y2,izero],m-1,[zeroes(m-2),y2])*pending_integral(p,0,zeroes(0)) &
         - pending_integral([p,izero] ,m-1,[zeroes(m-2),y2])
@@ -139,6 +155,7 @@ CONTAINS
   
     ! case of higher depth, s_r at beginning, use my (68)
     if(i == 1) then
+#ifdef DEBUG
       if(verb >= 30) print*, 'case higher depth, sr at beginning'
       
       if(verb >= 50) then
@@ -151,6 +168,7 @@ CONTAINS
         print*, 'PI with p=',real([p,a(1)]),'i=',0,'g =',tocmplx(zeroes(0))
         call print_G(a,y2)
       end if
+#endif
 
       res = pending_integral(p,0,zeroes(0)) * G_flat([izero,a],y2) &
         + pending_integral([p,y2],0,zeroes(0)) * G_flat(a,y2) &
@@ -161,14 +179,18 @@ CONTAINS
     
     ! case higher depth, s_r at the end, use (62)
     if(i == size(g)) then
+#ifdef DEBUG
       if(verb >= 30) print*, 's_r at the end under PI, need to shuffle'
+#endif
       m = find_amount_trailing_zeros(a) + 1
       res = remove_sr_from_last_place_in_PI(a(1:size(a)-(m-1)), y2, m, p)
       return
     end if
     
     ! case higher depth, s_r in middle, use my (67)
+#ifdef DEBUG
     if(verb >= 30) print*, 's_r in the middle under PI'
+#endif
 
     res =  +pending_integral(p,1,zeroes(0)) * G_flat([a(1:i-1),izero,a(i:size(a))],y2) & !64
       - pending_integral([p,a(i-1)],i-1,[a(1:i-2),a(i:size(a)),y2]) & ! 67a
@@ -204,7 +226,9 @@ CONTAINS
 
     if(i == size(a)) then
       ! sr at the end, thus shuffle as in (62)
+#ifdef DEBUG
       if(verb >= 30) print*, 'sr at the end'
+#endif
       mminus1 = find_amount_trailing_zeros(a(1:size(a)-1))
       res = remove_sr_from_last_place_in_G(a(1:size(a)-mminus1-1),y2,mminus1+1,sr)
       return
@@ -213,6 +237,7 @@ CONTAINS
     if(i == 1) then
       !s_r at beginning, thus use (68)
 
+#ifdef DEBUG
       if(verb >= 30) then 
         print*, '--------------------------------------------------'
         print*, 'sr at beginning, map to: '
@@ -224,6 +249,7 @@ CONTAINS
         call print_G(a(i+1:size(a)), y2)
         print*, '--------------------------------------------------'
       end if
+#endif
 
       res = G_flat([izero, a(i+1:size(a))], y2) &
         + G_flat([y2], sr) * G_flat(a(i+1:size(a)), y2) &
@@ -233,6 +259,7 @@ CONTAINS
     end if
 
     ! so s_r in middle, use (67)
+#ifdef DEBUG
     if(verb >= 30) then 
       print*, '--------------------------------------------------'
       print*, 'sr in the middle, map to: '
@@ -245,6 +272,7 @@ CONTAINS
       call print_G([a(1:i-1),a(i+1:size(a))],y2)
       print*, '--------------------------------------------------'
     end if
+#endif
 
     res = G_flat([a(1:i-1),izero,a(i+1:size(a))],y2) &
       - pending_integral([sr,a(i-1)], i-1, [a(1:i-2),a(i+1:size(a)),y2])  &
@@ -259,7 +287,9 @@ CONTAINS
     complex(kind=prec) :: res
     complex(kind=prec), parameter :: p = 2.0
     integer :: k, j
+#ifdef DEBUG
     if(verb >= 30) print*, 'requires Hoelder convolution'
+#endif
     ! In the Hoelder expression, all the (1-z) are -i0.. GiNaC does something
     ! different (and confusing, l. 1035). As we do, they usually would set
     ! i0 -> -z%i0. However, if Im[z] == 0 and Re[z] >= 1, they just set it to
@@ -289,7 +319,9 @@ CONTAINS
     integer, allocatable :: m(:)
     logical :: is_depth_one
 
+#ifdef DEBUG
     if(verb >= 50) call print_G(z_flat,y)
+#endif
 
 
     if(size(z_flat) == 1) then
@@ -307,12 +339,16 @@ CONTAINS
 
     ! is just a logarithm? 
     if(all(abs(z_flat) < zero)) then
+#ifdef DEBUG
       if(verb >= 70) print*, 'all z are zero'
+#endif
       res = gpl_zero_zi(size(z_flat),y)
       return
     end if
     if(size(z_flat) == 1) then
+#ifdef DEBUG
       if(verb >= 70) print*, 'is just a logarithm'
+#endif
       if(abs(z_flat(1)) <= zero) then 
         ! This shouldn't happen!
         res = gpl_zero_zi(1,y)
@@ -328,7 +364,9 @@ CONTAINS
     is_depth_one = (count((m_prime>0)) == 1)
     if(is_depth_one) then
       ! case m >= 2, other already handled above
+#ifdef DEBUG
       if(verb >= 70) print*, 'is just a polylog'
+#endif
       res = -polylog(m_1, y, z_flat(m_1))!-polylog(m_1,y/z_flat(m_1))
       return
     end if
@@ -341,7 +379,9 @@ CONTAINS
       res = GPL_zero_zi(k,y)
       return
     else if(kminusj > 0) then
+#ifdef DEBUG
       if(verb >= 30) print*, 'need to remove trailing zeroes'
+#endif
       allocate(s(j,j))
       s = shuffle_with_zero(z_flat(1:j-1))
       res = GPL_zero_zi(1,y)*G_flat(z_flat(1:size(z_flat)-1),y)
@@ -355,7 +395,9 @@ CONTAINS
 
     ! need make convergent?
     if(.not. is_convergent(z_flat,y)) then
+#ifdef DEBUG
       if(verb >= 10) print*, 'need to make convergent'
+#endif
       res = make_convergent(z_flat, y)
       return
     end if

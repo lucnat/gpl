@@ -298,7 +298,9 @@ CONTAINS
     type(inum) :: x, inv
     complex(kind=prec) :: res
     
+#ifdef DEBUG
     if(verb >= 70) print*, 'called polylog(',m,',',x%c,x%i0,')'
+#endif
     if ((m.le.9).and.(abs(x%c-1.).lt.zero)) then
       res = zeta(m)
       return

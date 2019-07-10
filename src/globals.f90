@@ -16,6 +16,7 @@ MODULE globals
 
 CONTAINS 
   
+#ifdef DEBUG
   SUBROUTINE parse_cmd_args
     integer :: i
     character(len=32) :: arg
@@ -33,5 +34,6 @@ CONTAINS
       i = i+1
     end do
   END SUBROUTINE parse_cmd_args
+#endif
 
 END MODULE globals

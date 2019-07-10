@@ -142,6 +142,7 @@ CONTAINS
     end do
   END FUNCTION shuffle_with_zero
 
+#ifdef DEBUG
   SUBROUTINE print_matrix(m) 
     complex(kind=prec) :: m(:,:)
     integer :: s(2), i
@@ -159,6 +160,7 @@ CONTAINS
       print*, m(i,:)
     end do
   END SUBROUTINE print_logical_matrix
+#endif
 
   ! subroutine print(s1,s2,s3,s4,s5)
   !   character(len = *), intent(in), optional :: s1, s2, s3, s4, s5

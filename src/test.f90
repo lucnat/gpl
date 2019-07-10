@@ -17,7 +17,9 @@ PROGRAM TEST
   character(len=6) :: ginacwhat
 #endif
 
+#ifdef DEBUG
   call parse_cmd_args()
+#endif
 
   tol = 8e-10
   call do_MPL_tests() 
@@ -31,9 +33,9 @@ PROGRAM TEST
   ginacwhat = 'values'
   call do_muone_tests(cmplx(0.4),cmplx(.7),"")
   ginacwhat = 'speed1'
-  call do_muone_tests(cmplx(0.4),cmplx(.7),"using GPL")
-  ginacwhat = 'speed2'
   call do_muone_tests(cmplx(0.4),cmplx(.7),"using GiNaC")
+  ginacwhat = 'speed2'
+  call do_muone_tests(cmplx(0.4),cmplx(.7),"using GPL")
 #endif
 
   if(tests_successful) then

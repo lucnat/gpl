@@ -10,7 +10,9 @@ PROGRAM eval
   
   complex(kind=prec) :: res 
 
+#ifdef DEBUG
   call parse_cmd_args()
+#endif
 
   res = GPL([-1.,0.,0.,0.,1.])
   print*, res
