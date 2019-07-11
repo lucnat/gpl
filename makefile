@@ -13,6 +13,8 @@ else
 LD=gfortran
 endif
 
+CFLAGS=-std=c99
+
 FFLAGS=-fdefault-real-8 -cpp -pedantic-errors -std=f2008
 FFLAGS+= -Werror -Wall -Wno-maybe-uninitialized -Wno-uninitialized 
 
@@ -67,7 +69,7 @@ build/%.tm.c: src/%.tm build/mcc.internals
 
 build/gpl.o: build/gpl.tm.c build/mcc.internals
 		@echo "CC $<"
-		@$(CC) $(shell sed -n '4p' build/mcc.internals) -o $@ -c $<
+		@$(CC) $(CFLAGS) $(shell sed -n '4p' build/mcc.internals) -o $@ -c $<
 
 gpl: build/gpl.o libgpl.a build/mcc.internals
 		@echo "LD $@"
