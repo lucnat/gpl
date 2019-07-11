@@ -8,7 +8,7 @@ MODULE globals
   real, parameter :: pi = 3.14159265358979323846
 
   ! The following parameters control the accuracy of the evaluation
-  integer, protected :: MPLInfinity = 30               ! the default outermost expansion order for MPLs, formerly GPLInfinity
+  real(kind=prec), protected :: MPLdel = 1e-15         ! if the MPL sum changes less then del it is truncated.
   integer, protected :: PolylogInfinity = 1000         ! expansion order for Polylogs
   real(kind=prec), protected :: HoelderCircle = 1.1    ! when to apply Hoelder convolution?
 
@@ -36,10 +36,10 @@ CONTAINS
   END SUBROUTINE parse_cmd_args
 #endif
 
-  SUBROUTINE SET_OPTIONS(mplinf, liinf, hcircle)
-    real(kind=prec), optional :: hcircle
-    integer, optional :: mplinf, liinf
-    if (present(mplinf)) MPLInfinity = mplinf
+  SUBROUTINE SET_OPTIONS(mpldel, liinf, hcircle)
+    real(kind=prec), optional :: hcircle, mpldel
+    integer, optional :: liinf
+    if (present(mpldel)) MPLdel = mpldel
     if (present(liinf)) PolyLogInfinity = liinf
     if (present(hcircle)) HoelderCircle = hcircle
   END SUBROUTINE

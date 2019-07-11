@@ -82,6 +82,11 @@ CONTAINS
     
     ref = cmplx(0.000023446106415452030937059124671151)
     call test_one_MPL((/ 2,1,2 /),cmplx((/ 0.03, 0.5012562893380046, 55.3832 /)),ref, '1.3')  
+
+    ref = cmplx(-0.06565799418838372)
+    call test_one_MPL((/1, 1/), cmplx((/-0.25,-2. /)), ref, '1.4')
+    ref = cmplx(-0.03199896396564833)
+    call test_one_MPL((/2, 1/), cmplx((/-0.25,-2. /)), ref, '1.4')
   end subroutine do_MPL_tests
 
   subroutine test_one_condensed(m,z,y,k,ref,test_id)

@@ -20,37 +20,36 @@ CONTAINS
     end if
   END FUNCTION MPL_converges
 
-  recursive FUNCTION MPL(m, x, n_passed) result(res)
-    ! Computes the multiple polylogarithm Li_{m1,...,mk} (x1,...,xk) up to order n
+  FUNCTION MPL(m, x) result(res)
     integer :: m(:)
     complex(kind=prec) :: x(:)
     complex(kind=prec) :: res
-    integer, optional :: n_passed
-    integer :: i, n
+    complex(kind=prec) :: t(size(x))
+    integer :: q, j, k
+    j = size(x)
 
-    n = merge(n_passed,MPLInfinity,present(n_passed))  
 
     if(size(m) /= size(x)) then
       print*, 'Error: m and x must have the same length'
     end if
+    res=0
+    q=0
+    t=0
+    do while(.true.)
+      res = t(1)
+      q = q+1
+      t(j) = t(j) + x(j)**q/q**m(j)
+      do k=1,j-1
+        t(j-k) = t(j-k) + t(j-k+1) * x(j-k)**(k+q)/(k+q)**m(j-k)
+      enddo
 
-    res = 0
+      if (mod(q,2) .eq. 1) then
+        if (abs(t(1)-res).lt.MPLdel) exit
+      endif
+    enddo
+    res = t(1)
 
 
-    if(size(m) == 1) then
-      ! base case, we get a polylog
-      do i = 1, n
-    if(i**m(1) < 0) return ! roll over
-    if(abs(x(1)**i) < 1.e-250) return
-        res = res + x(1)**i / i**m(1)
-      end do
-    else 
-      ! recursion step
-      do i = 1, n    
-        res = res + x(1)**i / i**m(1) * MPL(m(2:), x(2:), i - 1)
-      end do
-      
-    end if
   END FUNCTION MPL
 
 END MODULE mpl_module
