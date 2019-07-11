@@ -82,6 +82,7 @@ build/gpl.o: build/gpl.tm.c build/mcc.internals
 gpl: build/gpl.o libgpl.a build/mcc.internals
 		@echo "LD $@"
 		@$(LD)  $< libgpl.a -o $@ $(shell sed -n '6p' build/mcc.internals) -lgfortran
+endif
 
 eval: libgpl.a build/eval.o
 		@echo "LD $@"
