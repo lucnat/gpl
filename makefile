@@ -10,12 +10,11 @@ ifeq ($(HAVE_GINAC),1)
 LD=g++
 LFLAGS=-lgfortran
 else
-LD=gfortran
+LD=$(FC)
 endif
 
-CFLAGS=-std=c99
-
-FFLAGS=-fdefault-real-8 -cpp -pedantic-errors -std=f2008
+ifeq ($(FC),gfortran)
+FFLAGS=-fdefault-real-8 -cpp -pedantic-errors -std=f2008 -J build
 FFLAGS+= -Werror -Wall -Wno-maybe-uninitialized -Wno-uninitialized 
 
 ifeq ($(MODE),RELEASE)
@@ -29,11 +28,19 @@ ifeq ($(HAVE_GINAC),1)
 FFLAGS += -DHAVE_GINAC
 endif
 
+else
+FFLAGS=-autodouble -module build -fpp -stand f03 -O3 -xHost -fast
+endif
+CFLAGS=-std=c99
 
 files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o GPL.o
 objects = $(addprefix build/,$(files))
 
+ifeq ($(FC),gfortran)
 all: libgpl.a gpl eval test
+else
+all: libgpl.a eval test
+endif
 
 libgpl.a:$(objects)
 		@echo "AR $@"
@@ -42,7 +49,7 @@ libgpl.a:$(objects)
 # rules to make object files into /build
 build/%.o: src/%.f90
 		@echo "F90 $@"
-		@$(FC) $(FFLAGS) -c $< -J build -o $@
+		@$(FC) $(FFLAGS) -c $< -o $@
 
 build/%.o: src/%.cpp
 		@echo "C++ $@"
@@ -50,6 +57,7 @@ build/%.o: src/%.cpp
 
 # Mathlink related
 
+ifeq ($(FC),gfortran)
 build/mcc.internals.tmp:
 		@echo "MCC --internals"
 		@$(MCC) --internals > $@

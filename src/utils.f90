@@ -110,8 +110,11 @@ CONTAINS
 
   RECURSIVE FUNCTION factorial(n) result(res)
     integer, intent(in) :: n
-    integer :: res
-    res = merge(1,n*factorial(n-1),n==0)
+    integer :: res, i
+    res = 1
+    do i=n,1,-1
+      res = res*i
+    enddo
   END FUNCTION factorial
 
   FUNCTION shuffle_with_zero(a) result(res)
