@@ -71,13 +71,15 @@ findlib() {
             -L* )
                 libfolder=${flag/-L/}
                 if [ -f "$libfolder/lib$1.so" ] ; then
-                    echo "$libfolder/lib$1.so" 1>&3
-                    printf -v "CONF_$1" "%q" "$libfolder/lib$1.so"
+                    path=`realpath "$libfolder/lib$1.so"`
+                    echo $path 1>&3
+                    printf -v "CONF_$1" "%q" "$path"
                     return 0
                 fi
                 if [ -f "$libfolder/lib$1.a" ] ; then
-                    echo "$libfolder/lib$1.a" 1>&3
-                    printf -v "CONF_$1" "%q" "$libfolder/lib$1.a"
+                    path=`realpath "$libfolder/lib$1.a"`
+                    echo $path 1>&3
+                    printf -v "CONF_$1" "%q" "$path"
                     return 0
                 fi
             ;;
@@ -175,7 +177,7 @@ tee $test.f90 << _EOF_ 1>&2
     program test
     integer i
     common /uscore/ i
-    stop i
+    call exit(i)
     end
 _EOF_
 
@@ -199,7 +201,7 @@ while read line ; do
       shift ;;
     esac
   done
-done < <(eval $CONF_FC $CONF_FFLAGS -v -o $test $test.f90 2>&1)
+done < <(eval $CONF_FC  -v -o $test $test.f90 2>&1)
 echo "ok" 1>&3
 
 eval addflag LFLAGS "$LDFLAGS $CONF_LDFLAGS $FLDFLAGS"
@@ -222,7 +224,7 @@ _EOF_
 
     for CONF_BITS in ${CONF_BITS:--m64 -m32} ; do
       eval $CONF_CC $CONF_CFLAGS $CONF_BITS -c $test-c.c 1>&2 || continue
-      eval $CONF_FC $CONF_FFLAGS -o $test $test.f90 $test-c.o 1>&2 && break
+      eval $CONF_FC  -o $test $test.f90 $test-c.o 1>&2 && break
     done
 
     ./$test
@@ -284,15 +286,17 @@ _EOF_
         fi
     fi
 
-    if ! findlib uuid UUID ; then
-        echo -n "improvising uuid... " 1>&3
-        CONF_MLIBDIR=$CONF_MATH_DIR/SystemFiles/Libraries/$CONF_MATH_SYS/
-        if [ -f $CONF_MLIBDIR/libuuid.a ]; then
-            CONF_MCC_LFLAGS="-L$CONF_MLIBDIR $CONF_MCC_LFLAGS"
-            echo "okay" 1>&3
-        else
-            echo "failed" 1>&3
-            exit 1
+    if [[ $CONF_MCC_LFAGS == *"uuid"* ]]; then
+        if ! findlib uuid UUID ; then
+            echo -n "improvising uuid... " 1>&3
+            CONF_MLIBDIR=$CONF_MATH_DIR/SystemFiles/Libraries/$CONF_MATH_SYS/
+            if [ -f $CONF_MLIBDIR/libuuid.a ]; then
+                CONF_MCC_LFLAGS="-L$CONF_MLIBDIR $CONF_MCC_LFLAGS"
+                echo "okay" 1>&3
+            else
+                echo "failed" 1>&3
+                exit 1
+            fi
         fi
     fi
 
@@ -380,11 +384,11 @@ build/%.tm.c: src/%.tm
 		@echo "MPREP \$@"
 		@\$(MPREP) \$< -o \$@
 
-build/gpl.o: build/gpl.tm.c
+build/mathlink.o: build/mathlink.tm.c
 		@echo "CC \$<"
 		@\$(CC) \$(MCFLAGS) \$(CFLAGS) -o \$@ -c \$<
 
-gpl: build/gpl.o libgpl.a
+gpl: build/mathlink.o libgpl.a
 		@echo "LD \$@"
 		@\$(LD)  $< libgpl.a -o \$@ \$(LFLAGS) \$(MLFLAGS)
 EOF
