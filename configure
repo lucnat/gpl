@@ -331,3 +331,85 @@ _EOF_
         CONF_ML=0
     }
 fi
+
+
+echo "creating makefile" 1>&3
+
+CONF_LD=$CONF_FC
+
+cat  > makefile <<EOF
+# Generated through $0 $@ on `date` by `whoami`
+
+AR=ar rcs
+FC=$CONF_FC
+CC=$CONF_CC
+CXX=$CONF_CXX
+LD=$CONF_LD
+MPREP=$CONF_MPREP
+
+FFLAGS=$CONF_FFLAGS
+CFLAGS=$CONF_CFLAGS
+LFLAGS=$CONF_LFLAGS
+MCFLAGS=$CONF_MCC_CFLAGS
+MLFLAGS=$CONF_MCC_LFLAGS
+
+
+files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o GPL.o
+objects = \$(addprefix build/,\$(files))
+
+
+all: libgpl.a ${CONF_MPREP:+gpl} eval test
+
+libgpl.a:\$(objects)
+		@echo "AR \$@"
+		@\$(AR) \$@ $^
+
+# rules to make object files into /build
+build/%.o: src/%.f90
+		@echo "F90 \$@"
+		@\$(FC) \$(FFLAGS) -c $< -o \$@
+
+build/%.o: src/%.cpp
+		@echo "C++ \$@"
+		@\$(CC) -c $<  -o \$@
+
+EOF
+
+$HAVE_MCC && cat >> makefile <<EOF
+build/%.tm.c: src/%.tm
+		@echo "MPREP \$@"
+		@\$(MPREP) \$< -o \$@
+
+build/gpl.o: build/gpl.tm.c
+		@echo "CC \$<"
+		@\$(CC) \$(MCFLAGS) \$(CFLAGS) -o \$@ -c \$<
+
+gpl: build/gpl.o libgpl.a
+		@echo "LD \$@"
+		@\$(LD)  $< libgpl.a -o \$@ \$(LFLAGS) \$(MLFLAGS)
+EOF
+
+cat  >> makefile <<EOF
+
+
+eval: libgpl.a build/eval.o
+		@echo "LD \$@"
+		@\$(LD) -o \$@ build/eval.o -L. -lgpl \$(LFLAGS)
+
+
+test: \$(objects) ${CONF_GINAC:+build/ginac.o} build/test.o
+		@echo "LD \$@"
+		@\$(LD) -o \$@ $^ \$(LFLAGS)
+
+check: test
+		./$<
+
+clean:
+		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
+		@rm -f test eval libgpl.a gpl
+
+distclean:
+		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
+		@rm -f test eval libgpl.a gpl
+		@rm -f makefile
+EOF
