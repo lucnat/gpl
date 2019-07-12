@@ -63,6 +63,29 @@ findprog() {
     echo "no $@ in your path" 1>&3
     return 1
 }
+
+findlib() {
+    echo -n "looking for lib$1... " 1>&3
+    for flag in $CONF_LFLAGS ; do
+        case "$flag" in
+            -L* )
+                libfolder=${flag/-L/}
+                if [ -f "$libfolder/lib$1.so" ] ; then
+                    echo "$libfolder/lib$1.so" 1>&3
+                    printf -v "CONF_$1" "%q" "$libfolder/lib$1.so"
+                    return 0
+                fi
+                if [ -f "$libfolder/lib$1.a" ] ; then
+                    echo "$libfolder/lib$1.a" 1>&3
+                    printf -v "CONF_$1" "%q" "$libfolder/lib$1.a"
+                    return 0
+                fi
+            ;;
+        esac
+    done
+    echo "not found" 1>&3
+    return 1
+}
 addflag() {
     eval "CONF_$1=\"\${CONF_$1} ${@:2}\""
 }
@@ -73,7 +96,7 @@ gnuflags() {
     eval addflag FFLAGS -pedantic-errors -std=f2008  # folow f08 strictly
     eval addflag FFLAGS -J build                     # where to put mods
     eval addflag FFLAGS -Werror -Wall                # make every warning an error
-    eval addflag FFLAGS -Wno-uninitialized 
+    eval addflag FFLAGS -Wno-uninitialized
 }
 
 findprog fortran FC  ifort gfortran  || exit 1
@@ -92,7 +115,7 @@ case "$1,$2,$3" in
         eval addflag $CONF_BITS
         if $DEBUG ; then
             eval addflag FFLAGS -g -O0
-            eval addflag FFLAGS -ffpe-trap=invalid,overflow 
+            eval addflag FFLAGS -ffpe-trap=invalid,overflow
             eval addflag FFLAGS -fdump-core -fbacktrace
             eval addflag FFLAGS -frange-check
             eval addflag FFLAGS -DDEBUG
@@ -107,7 +130,7 @@ case "$1,$2,$3" in
         eval addflag $CONF_BITS
         if $DEBUG ; then
             eval addflag FFLAGS -g -O0
-            eval addflag FFLAGS -ffpe-trap=invalid,overflow 
+            eval addflag FFLAGS -ffpe-trap=invalid,overflow
             eval addflag FFLAGS -fdump-core -fbacktrace
             eval addflag FFLAGS -fcheck=all -frange-check
             eval addflag FFLAGS -DDEBUG
@@ -222,6 +245,89 @@ else
     $CONF_NOUNDERSCORE=
 fi
 
-#if ( $CONF_GINA || $CONF_MCC ); then
-#
-#fi
+
+if $HAVE_MCC ; then
+    PATH=$PATH:/Applications/Mathematica.app/Contents/MacOS/ findprog mathematica MATH math MathKernel math10 math11
+
+
+    # Checking Mathematica system id
+
+    echo -n "what is $CONF_MATH SystemID... " 1>&3
+
+    tee $test.m << _EOF_ 1>&2
+        Print["SYSID "<>ToString[\$SystemID]];
+        Print["INSTDIR "<>ToString[\$InstallationDirectory]];
+_EOF_
+    $CONF_MATH < $test.m > $test.log
+    CONF_MATH_SYS=`cat $test.log | grep "SYSID"   | sed 's/.*SYSID //'`
+    CONF_MATH_DIR=`cat $test.log | grep "INSTDIR" | sed 's/.*INSTDIR //'`
+    echo  $CONF_MATH_SYS 1>&3
+
+
+    # Finding mcc
+    CONF_COMPAD=$CONF_MATH_DIR/SystemFiles/Links/MathLink/DeveloperKit/$CONF_MATH_SYS/CompilerAdditions/
+    PATH=$CONF_COMPAD:$PATH findprog mcc MCC mcc
+
+    echo -n "looking for MLDK directory... " 1>&3
+    $CONF_MCC --internals > $test.int
+    CONF_MLDK=`cat $test.int | grep "MLDK Directory" | cut -f2 -d":"`
+    echo $CONF_MLDK 1>&3
+
+    arch=`cat $test.int | grep "Library Bit Type:" | cut -f2 -d":"` ; \
+    CONF_MCC_CFLAGS=`cat $test.int | grep "Compile Flags$arch:" | cut -f2 -d":"`
+    CONF_MCC_LFLAGS=`cat $test.int | grep "Linker Libraries" | cut -f2 -d":"`
+    cat $test.int | grep "Linker Libraries" | cut -f2 -d":"
+    if [ ! -z $CONF_BITS ]; then
+        if [ "$CONF_BITS" -ne "$MCC_BITS" ]; then
+            echo "mcc wants $MCC_BITS ($arch), $CONF_BITS selected." 1>&3
+            exit 1
+        fi
+    fi
+
+    if ! findlib uuid UUID ; then
+        echo -n "improvising uuid... " 1>&3
+        CONF_MLIBDIR=$CONF_MATH_DIR/SystemFiles/Libraries/$CONF_MATH_SYS/
+        if [ -f $CONF_MLIBDIR/libuuid.a ]; then
+            CONF_MCC_LFLAGS="-L$CONF_MLIBDIR $CONF_MCC_LFLAGS"
+            echo "okay" 1>&3
+        else
+            echo "failed" 1>&3
+            exit 1
+        fi
+    fi
+
+    # Finding MPREP
+    PATH=$CONF_COMPAD:$PATH findprog mprep MPREP mprep
+
+    ## can we do MathLink compilations
+    echo -n "do we have working MathLink... " 1>&3
+    tee $test.tm << _EOF_ 1>&2
+:Begin:
+:Function: test
+:Pattern: Test[i_Integer]
+:Arguments: {i}
+:ArgumentTypes: {Integer}
+:ReturnType: Integer
+:End:
+
+#include "mathlink.h"
+
+static int test(const int i) {
+  return i + 1;
+}
+
+int main(int argc, char **argv) {
+  return MLMain(argc, argv);
+}
+_EOF_
+    $CONF_MPREP $test.tm > $test.tm.c
+    $CONF_CC $CONF_MCC_CFLAGS $CONF_CFLAGS -c $test.tm.c
+    $CONF_CC -o $test.math $test.tm.o $CONF_MCC_LFLAGS
+    test -x $test.math && {
+        echo "yes" 1>&3
+        CONF_ML=1
+    } || {
+        echo "no" 1>&3
+        CONF_ML=0
+    }
+fi
