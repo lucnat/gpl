@@ -28,6 +28,10 @@ ifeq ($(HAVE_GINAC),1)
 FFLAGS += -DHAVE_GINAC
 endif
 
+ifeq ($(DISABLE_CACHE),1)
+FFLAGS += -DNOCACHE
+endif
+
 else
 FFLAGS=-autodouble -module build -fpp -stand f03 -O3 -xHost -fast
 endif

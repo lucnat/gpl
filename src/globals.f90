@@ -11,6 +11,8 @@ MODULE globals
   real(kind=prec), protected :: MPLdel = 1e-15         ! if the MPL sum changes less then del it is truncated.
   integer, protected :: PolylogInfinity = 1000         ! expansion order for Polylogs
   real(kind=prec), protected :: HoelderCircle = 1.1    ! when to apply Hoelder convolution?
+  integer, parameter :: PolyLogCacheSize(2) = (/ 5, 100 /)
+        ! = (/ mmax, n /). At most n polylogs with weight mmax will be cached
 
   integer :: verb = 0
 

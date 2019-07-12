@@ -11,6 +11,13 @@ MODULE maths_functions
                1.03692775514337, 1.0173430619844488, 1.008349277381923, &
                1.0040773561979441, 1.0020083928260821, 1.000994575127818/)
 
+  type el
+    type(inum) :: c
+    complex(kind=prec) ans
+  end type el
+
+  type(el) :: cache(PolyLogCacheSize(1),PolyLogCacheSize(2))
+  integer :: plcachesize(PolyLogCacheSize(1)) = 0
 CONTAINS
 
   FUNCTION naive_polylog(m,x) result(res)
@@ -292,30 +299,46 @@ CONTAINS
     integer :: m
     type(inum) :: x, inv
     complex(kind=prec) :: res
+    integer i
+
     
 #ifdef DEBUG
     if(verb >= 70) print*, 'called polylog(',m,',',x%c,x%i0,')'
 #endif
+#ifndef NOCACHE
+    if (m.le.5) then
+      do i=1,plcachesize(m)
+        if( abs(cache(m,i)%c%c-x%c).lt.zero ) then
+          res = cache(m,i)%ans
+          return
+        endif
+      enddo
+    endif
+#endif
     if ((m.le.9).and.(abs(x%c-1.).lt.zero)) then
       res = zeta(m)
-      return
     else if ((m.le.9).and.(abs(x%c+1.).lt.zero)) then
       res = -(1. - 2.**(1-m))*zeta(m)
-      return
     else if (abs(x) .gt. 1) then
       inv = inum(1./x%c, x%i0)
       res = (-1)**(m-1)*polylog(m,inv) &
           - cmplx(0,2*pi)**m * bernoulli_polynomial(m, 0.5-cmplx(0.,1.)*conjg(log(-x%c))/2/pi) / factorial(m)
-      return
-    endif
-
-    if(m == 2) then
+    else if(m == 2) then
       res = dilog(x%c)
     else if(m == 3) then
       res = trilog(x%c)
     else
       res = naive_polylog(m,x%c)
     end if
+
+#ifndef NOCACHE
+    if (m.le.PolyLogCacheSize(1)) then
+      if (plcachesize(m).lt.PolyLogCacheSize(2)) then
+        plcachesize(m) = plcachesize(m) + 1
+        cache(m,plcachesize(m)) = el(x,res)
+      endif
+    endif
+#endif
   END FUNCTION polylog1
 
 
@@ -338,6 +361,12 @@ CONTAINS
   !TODO!!
   plog1 = log(1.-a%c/b%c)
   END FUNCTION
+
+#ifndef NOCACHE
+  SUBROUTINE CLEARCACHE
+  plcachesize=0
+  END SUBROUTINE
+#endif
 
 END MODULE maths_functions
 

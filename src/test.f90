@@ -1302,9 +1302,11 @@ CONTAINS
     endif
   end subroutine
   subroutine do_muone_tests(x,y,msg)
+    use maths_functions, only:clearcache
     complex(kind=prec) x, y
     real(kind=prec) tstart, tend
     character(len=*) :: msg
+    call clearcache
     call cpu_time(tstart)
     call test_one_ginac([(-1.,0.),x],'6.1')
     call test_one_ginac([(-1.,0.),(-1.,0.),x],'6.2')
@@ -1507,7 +1509,7 @@ CONTAINS
     call cpu_time(tend)
     write(*,900) msg,198./(tend-tstart)
 
-900 format("Evaluating ",A," at ",F8.2,"G/s")
+900 format("Evaluating ",A," at ",F9.2,"G/s")
   end subroutine
 #endif
   ! subroutine do_shuffle_tests() 
