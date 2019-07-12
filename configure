@@ -12,8 +12,9 @@ export LC_ALL=C
 CONF_DIR="${0%/*}"
 CONF_OS="`uname -s`"
 CONF_MACH="`uname -m`"
-CONF_GINAC=false
-CONF_MCC=false
+HAVE_GINAC=false
+HAVE_MCC=false
+CONF_BITS=
 
 DEBUG=false
 for arg in "$@" ; do
@@ -25,9 +26,13 @@ for arg in "$@" ; do
         --host=*)
             CONF_TARGET="${arg#--host=}" ;;
         --with-ginac)
-            CONF_GINAC=true ;;
+            HAVE_GINAC=true ;;
         --with-mcc)
-            CONF_MCC=true ;;
+            HAVE_MCC=true ;;
+        --32)
+            CONF_BITS="-m32" ;;
+        --64)
+            CONF_BITS="-m64" ;;
         -*)
             echo "Warning: $arg is not a valid option." 1>&3 ;;
         *=*)
@@ -48,17 +53,10 @@ findprog() {
     echo -n "looking for $1... " 1>&3
     var="$2"
     set -- ${!var:+"${!var}"} "${@:3}"
-    test -n "$CONF_TARGET" && for prog in "$@" ; do
-        full="`type -P "$CONF_TARGET-$prog"`" && {
-            echo "$full" 1>&3
-            printf -v "CONF_$var" "%q" "$CONF_TARGET-$prog"
-            return 0
-        }
-    done
     for prog in "$@" ; do
         full="`type -P "$prog"`" && {
             echo "$full" 1>&3
-            printf -v "CONF_$var" "%q" "$prog"
+            printf -v "CONF_$var" "%q" "$full"
             return 0
         }
     done
@@ -66,13 +64,13 @@ findprog() {
     return 1
 }
 addflag() {
-    eval "CONF_$1=\"\${CONF_$1} $@\""
+    eval "CONF_$1=\"\${CONF_$1} ${@:2}\""
 }
 
 gnuflags() {
     eval addflag FFLAGS -fdefault-real-8             # default double is 8 byte
     eval addflag FFLAGS -cpp                         # C pre-processor
-    eval addflag FFLAGS -pedantic-errors -std=2008   # folow f08 strictly
+    eval addflag FFLAGS -pedantic-errors -std=f2008  # folow f08 strictly
     eval addflag FFLAGS -J build                     # where to put mods
     eval addflag FFLAGS -Werror -Wall                # make every warning an error
     eval addflag FFLAGS -Wno-uninitialized 
@@ -82,15 +80,16 @@ findprog fortran FC  ifort gfortran  || exit 1
 
 
 
-set -- `eval $CONF_FC --version -c | sed '/^$/d;s/(.*)//;q' 2>&1`
+set -- `eval $CONF_FC --version -c | sed '/^$/d;s/([^)]*)//;q' 2>&1`
 case "$1,$2,$3" in
     GNU,Fortran,[123].*)
         echo "Only version >= 4 are supported"
         exit
     ;;
-    GNU,Fortran,4)
+    GNU,Fortran,4.*)
     echo "Code optimisation is *not* suported on gfortran 4"
         gnuflags
+        eval addflag $CONF_BITS
         if $DEBUG ; then
             eval addflag FFLAGS -g -O0
             eval addflag FFLAGS -ffpe-trap=invalid,overflow 
@@ -105,6 +104,7 @@ case "$1,$2,$3" in
     GNU,Fortran,*)
         gnuflags
         eval addflag FFLAGS -Wno-maybe-uninitialized
+        eval addflag $CONF_BITS
         if $DEBUG ; then
             eval addflag FFLAGS -g -O0
             eval addflag FFLAGS -ffpe-trap=invalid,overflow 
@@ -121,6 +121,7 @@ case "$1,$2,$3" in
         eval addflag FFLAGS -module build
         eval addflag FFLAGS -fpp
         eval addflag FFLAGS -stand f03
+        eval addflag $CONF_BITS
         if $DEBUG ; then
             eval addflag FFLAGS -g -O0
             eval addflag FFLAGS -DDEBUG
@@ -128,13 +129,13 @@ case "$1,$2,$3" in
             eval addflag FFLAGS -DRELEASE -O3
             eval addflag FFLAGS -xHost -fast
         fi
-        if CONF_GINAC ; then
+        if HAVE_GINAC ; then
             echo "Option --with-ginac is incompatible with ifort, disabling"
-            CONF_GINAC=false
+            HAVE_GINAC=false
         fi
-        if CONF_MCC ; then
+        if HAVE_MCC ; then
             echo "Option --with-mcc is incompatible with ifort, disabling"
-            CONF_MCC=false
+            HAVE_MCC=false
         fi
     ;;
     *)
