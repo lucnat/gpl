@@ -1,0 +1,152 @@
+#! /bin/bash
+# configure script
+# note: has nothing to do with GNU autoconf
+
+exec 2> ${LOGFILE:-/dev/null} 3>&1
+eval ${LOGFILE:+set -x}
+
+
+shopt -s nullglob
+export LC_ALL=C
+
+CONF_DIR="${0%/*}"
+CONF_OS="`uname -s`"
+CONF_MACH="`uname -m`"
+CONF_GINAC=false
+CONF_MCC=false
+
+DEBUG=false
+for arg in "$@" ; do
+    case "$arg" in
+        --debug)
+            DEBUG=true ;;
+        --prefix=*)
+            CONF_PREFIX="${arg#--prefix=}" ;;
+        --host=*)
+            CONF_TARGET="${arg#--host=}" ;;
+        --with-ginac)
+            CONF_GINAC=true ;;
+        --with-mcc)
+            CONF_MCC=true ;;
+        -*)
+            echo "Warning: $arg is not a valid option." 1>&3 ;;
+        *=*)
+            eval "$arg" ;;
+        *)
+            echo "Warning: $arg is not a valid argument." 1>&3 ;;
+    esac
+done
+
+
+test=test$$
+trap "rm -fr $test* =." 0 1 2 3 15
+
+
+## look for some programs
+
+findprog() {
+    echo -n "looking for $1... " 1>&3
+    var="$2"
+    set -- ${!var:+"${!var}"} "${@:3}"
+    test -n "$CONF_TARGET" && for prog in "$@" ; do
+        full="`type -P "$CONF_TARGET-$prog"`" && {
+            echo "$full" 1>&3
+            printf -v "CONF_$var" "%q" "$CONF_TARGET-$prog"
+            return 0
+        }
+    done
+    for prog in "$@" ; do
+        full="`type -P "$prog"`" && {
+            echo "$full" 1>&3
+            printf -v "CONF_$var" "%q" "$prog"
+            return 0
+        }
+    done
+    echo "no $@ in your path" 1>&3
+    return 1
+}
+addflag() {
+    eval "CONF_$1=\"\${CONF_$1} $@\""
+}
+
+gnuflags() {
+    eval addflag FFLAGS -fdefault-real-8             # default double is 8 byte
+    eval addflag FFLAGS -cpp                         # C pre-processor
+    eval addflag FFLAGS -pedantic-errors -std=2008   # folow f08 strictly
+    eval addflag FFLAGS -J build                     # where to put mods
+    eval addflag FFLAGS -Werror -Wall                # make every warning an error
+    eval addflag FFLAGS -Wno-uninitialized 
+}
+
+findprog fortran FC  ifort gfortran  || exit 1
+
+
+
+set -- `eval $CONF_FC --version -c | sed '/^$/d;s/(.*)//;q' 2>&1`
+case "$1,$2,$3" in
+    GNU,Fortran,[123].*)
+        echo "Only version >= 4 are supported"
+        exit
+    ;;
+    GNU,Fortran,4)
+    echo "Code optimisation is *not* suported on gfortran 4"
+        gnuflags
+        if $DEBUG ; then
+            eval addflag FFLAGS -g -O0
+            eval addflag FFLAGS -ffpe-trap=invalid,overflow 
+            eval addflag FFLAGS -fdump-core -fbacktrace
+            eval addflag FFLAGS -frange-check
+            eval addflag FFLAGS -DDEBUG
+        else
+            eval addflag FFLAGS -DRELEASE
+            eval addflag FFLAGS -march=native -mtune=native
+        fi
+    ;;
+    GNU,Fortran,*)
+        gnuflags
+        eval addflag FFLAGS -Wno-maybe-uninitialized
+        if $DEBUG ; then
+            eval addflag FFLAGS -g -O0
+            eval addflag FFLAGS -ffpe-trap=invalid,overflow 
+            eval addflag FFLAGS -fdump-core -fbacktrace
+            eval addflag FFLAGS -fcheck=all -frange-check
+            eval addflag FFLAGS -DDEBUG
+        else
+            eval addflag FFLAGS -DRELEASE -O3
+            eval addflag FFLAGS -march=native -mtune=native
+        fi
+    ;;
+    ifort*)
+        eval addflag FFLAGS -autodouble
+        eval addflag FFLAGS -module build
+        eval addflag FFLAGS -fpp
+        eval addflag FFLAGS -stand f03
+        if $DEBUG ; then
+            eval addflag FFLAGS -g -O0
+            eval addflag FFLAGS -DDEBUG
+        else
+            eval addflag FFLAGS -DRELEASE -O3
+            eval addflag FFLAGS -xHost -fast
+        fi
+        if CONF_GINAC ; then
+            echo "Option --with-ginac is incompatible with ifort, disabling"
+            CONF_GINAC=false
+        fi
+        if CONF_MCC ; then
+            echo "Option --with-mcc is incompatible with ifort, disabling"
+            CONF_MCC=false
+        fi
+    ;;
+    *)
+        echo "Unknown compiler"
+        exit
+    ;;
+esac
+
+if $CONF_MCC ; then
+    findprog 
+fi
+
+#if ( $CONF_GINA || $CONF_MCC ); then
+#
+#fi
