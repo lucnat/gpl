@@ -16,6 +16,12 @@ HAVE_GINAC=false
 HAVE_MCC=false
 CONF_BITS=
 
+if [ "$CONF_OS" -eq "Darwin" ]; then
+    CONF_PREFIX=/usr/local/
+else
+    CONF_PREFIX=/usr/
+fi
+
 DEBUG=false
 for arg in "$@" ; do
     case "$arg" in
@@ -29,6 +35,8 @@ for arg in "$@" ; do
             HAVE_GINAC=true ;;
         --with-mcc)
             HAVE_MCC=true ;;
+        --mmprefix=*)
+            CONF_MMPREFIX="${arg#--mmprefix=}" ;;
         --32)
             CONF_BITS="-m32" ;;
         --64)
@@ -259,10 +267,13 @@ if $HAVE_MCC ; then
     tee $test.m << _EOF_ 1>&2
         Print["SYSID "<>ToString[\$SystemID]];
         Print["INSTDIR "<>ToString[\$InstallationDirectory]];
+        Print["USERDIR "<>ToString[\$UserBaseDirectory]];
 _EOF_
     $CONF_MATH < $test.m > $test.log
     CONF_MATH_SYS=`cat $test.log | grep "SYSID"   | sed 's/.*SYSID //'`
     CONF_MATH_DIR=`cat $test.log | grep "INSTDIR" | sed 's/.*INSTDIR //'`
+    CONF_MATH_USR=`cat $test.log | grep "USERDIR" | sed 's/.*USERDIR //'`
+    CONF_MMPREFIX=${CONF_MMPREFIX:=$CONF_MATH_USR/Kernel}
     echo  $CONF_MATH_SYS 1>&3
 
 
@@ -333,6 +344,7 @@ _EOF_
     } || {
         echo "no" 1>&3
         CONF_ML=0
+        exit 1;
     }
 fi
 
@@ -356,6 +368,9 @@ CFLAGS=$CONF_CFLAGS
 LFLAGS=$CONF_LFLAGS
 MCFLAGS=$CONF_MCC_CFLAGS
 MLFLAGS=$CONF_MCC_LFLAGS
+
+PREFIX=$CONF_PREFIX
+MMPREFIX=$CONF_MMPREFIX
 
 
 files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o GPL.o
@@ -404,6 +419,26 @@ eval: libgpl.a build/eval.o
 test: \$(objects) ${CONF_GINAC:+build/ginac.o} build/test.o
 		@echo "LD \$@"
 		@\$(LD) -o \$@ $^ \$(LFLAGS)
+
+install: libgpl.a build/gpl.mod ${CONF_MPREP:+gpl}
+		mkdir -p \$(PREFIX)
+		mkdir -p \$(PREFIX)/lib
+		cp libgpl.a \$(PREFIX)/lib/
+		mkdir -p \$(PREFIX)/include
+		cp build/gpl.mod \$(PREFIX)/include/
+EOF
+$HAVE_MCC && cat >> makefile <<EOF
+		mkdir -p \$(MMPREFIX)
+		cp gpl \$(MMPREFIX)
+EOF
+
+echo "uninstall:" >> makefile
+echo -ne "\t\trm -i " >> makefile
+echo -n "\$(PREFIX)/lib/libgpl.a " >> makefile
+echo -n "\$(PREFIX)/include/gpl.mod " >> makefile
+$HAVE_MCC && echo -n "\$(MMPREFIX)/gpl" >> makefile
+cat  >> makefile <<EOF
+
 
 check: test
 		./$<
