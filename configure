@@ -81,13 +81,13 @@ findlib() {
                 if [ -f "$libfolder/lib$1.so" ] ; then
                     path=`realpath "$libfolder/lib$1.so"`
                     echo $path 1>&3
-                    printf -v "CONF_$1" "%q" "$path"
+                    printf -v "CONF_$2" "%q" "$path"
                     return 0
                 fi
                 if [ -f "$libfolder/lib$1.a" ] ; then
                     path=`realpath "$libfolder/lib$1.a"`
                     echo $path 1>&3
-                    printf -v "CONF_$1" "%q" "$path"
+                    printf -v "CONF_$2" "%q" "$path"
                     return 0
                 fi
             ;;
@@ -212,7 +212,7 @@ while read line ; do
 done < <(eval $CONF_FC  -v -o $test $test.f90 2>&1)
 echo "ok" 1>&3
 
-eval addflag LFLAGS "$LDFLAGS $CONF_LDFLAGS $FLDFLAGS"
+eval addflag LFLAGS "$LDFLAGS $CONF_LDFLAGS $FLDFLAGS -L$CONF_PREFIX/lib"
 
 
 
@@ -349,9 +349,54 @@ _EOF_
 fi
 
 
+CONF_LD=$CONF_FC
+
+
+if $HAVE_GINAC ; then
+    if findlib ginac GINAC && findlib cln CLN ; then
+        CONF_LD=$CONF_CXX
+        echo -n "Checking if GiNaC works... " 1>&3
+        tee $test.ginac.cpp << _EOF_ 1>&2
+#include <ginac/ginac.h>
+#include <iostream>
+int main() {
+
+    GiNaC::ex ans = GiNaC::G(0.3,0.5,0.7);
+    ans -= 0.2876820724517808812+3.1415926535897932385*GiNaC::I;
+    ans = GiNaC::abs(ans);
+    if (ans<1e-15)
+        return 0;
+    else
+        return 1;
+}
+_EOF_
+        eval addflag LFLAGS "-L`dirname $CONF_GINAC`"
+        eval addflag LFLAGS "-L`dirname $CONF_CLN`"
+        eval addflag LFLAGS "-lginac -lcln"
+        $CONF_CXX $CONF_BITS -c $test.ginac.cpp
+        $CONF_LD -o $test.ginac $test.ginac.o $CONF_LFLAGS
+        ./$test.ginac
+        case $? in
+            0)
+              echo "yes" 1>&3
+              eval addflag FFLAGS "-DHAVE_GINAC" ;;
+            1)
+              echo "no" 1>&3
+              exit 1 ;;
+            *)
+              echo "error running GiNaC" 1>&3
+              exit 1 ;;
+        esac
+    else
+        echo "GiNaC could not be found" 1>&3
+        exit 1
+    fi
+fi
+
+
+
 echo "creating makefile" 1>&3
 
-CONF_LD=$CONF_FC
 
 cat  > makefile <<EOF
 # Generated through $0 $@ on `date` by `whoami`
