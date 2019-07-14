@@ -16,6 +16,16 @@ HAVE_GINAC=false
 HAVE_MCC=false
 CONF_BITS=
 
+CONF_FFLAGS=$FFLAGS
+CONF_CFLAGS=$CFLAGS
+CONF_CPPFLAGS=$CPPFLAGS
+CONF_LFLAGS=$LDFLAGS
+CONF_FC=$FC
+CONF_CC=$CC
+CONF_CXX=$CXX
+CONF_LD=$LD
+
+
 if [ "$CONF_OS" -eq "Darwin" ]; then
     CONF_PREFIX=/usr/local/
 else
@@ -109,8 +119,9 @@ gnuflags() {
     eval addflag FFLAGS -Wno-uninitialized
 }
 
-findprog fortran FC  ifort gfortran  || exit 1
-
+if [ -z $FC ]; then
+    findprog fortran FC  ifort gfortran  || exit 1
+fi
 
 
 set -- `eval $CONF_FC --version -c | sed '/^$/d;s/([^)]*)//;q' 2>&1`
@@ -349,12 +360,12 @@ _EOF_
 fi
 
 
-CONF_LD=$CONF_FC
+CONF_LD=${LD:-$CONF_FC}
 
 
 if $HAVE_GINAC ; then
     if findlib ginac GINAC && findlib cln CLN ; then
-        CONF_LD=$CONF_CXX
+        CONF_LD=${LD:-$CONF_CXX}
         echo -n "Checking if GiNaC works... " 1>&3
         tee $test.ginac.cpp << _EOF_ 1>&2
 #include <ginac/ginac.h>
@@ -373,7 +384,7 @@ _EOF_
         eval addflag LFLAGS "-L`dirname $CONF_GINAC`"
         eval addflag LFLAGS "-L`dirname $CONF_CLN`"
         eval addflag LFLAGS "-lginac -lcln"
-        $CONF_CXX $CONF_BITS -c $test.ginac.cpp
+        $CONF_CXX $CONF_CPPFLAGS $CONF_BITS -c $test.ginac.cpp
         $CONF_LD -o $test.ginac $test.ginac.o $CONF_LFLAGS
         ./$test.ginac
         case $? in
