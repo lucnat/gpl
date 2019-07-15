@@ -377,7 +377,7 @@ if $HAVE_GINAC ; then
             eval addflag CPPFLAGS `$CONF_PKGCONFIG --cflags ginac`
             eval addflag LFLAGS `$CONF_PKGCONFIG --libs ginac`
             FOUND_GINAC=true
-            CONF_GINAC=`$CONF_PKGCONFIG --libs-only-L ginac`
+            CONF_GINAC=`$CONF_PKGCONFIG --variable=libdir ginac`
         else
             echo "no" 1>&3
             FOUND_GINAC=false
