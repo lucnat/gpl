@@ -456,7 +456,7 @@ files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_modu
 objects = \$(addprefix build/,\$(files))
 
 
-all: libgpl.a ${CONF_MPREP:+gpl} eval test
+all: libgpl.a ${CONF_MPREP:+gpl} geval test
 
 libgpl.a:\$(objects)
 		@echo "AR \$@"
@@ -490,19 +490,18 @@ EOF
 cat  >> makefile <<EOF
 
 
-eval: libgpl.a build/eval.o
+geval: libgpl.a build/geval.o
 		@echo "LD \$@"
-		@\$(LD) -o \$@ build/eval.o -L. -lgpl \$(LFLAGS)
-
+		@\$(LD) -o \$@ build/geval.o -L. -lgpl \$(LFLAGS)
 
 test: \$(objects) ${CONF_GINAC:+build/ginac.o} build/test.o
 		@echo "LD \$@"
 		@\$(LD) -o \$@ $^ \$(LFLAGS)
 
-install: libgpl.a build/gpl.mod ${CONF_MPREP:+gpl} eval
+install: libgpl.a build/gpl.mod ${CONF_MPREP:+gpl} geval
 		mkdir -p \$(PREFIX)
 		mkdir -p \$(PREFIX)/bin
-		cp eval \$(PREFIX)/bin/geval
+		cp geval \$(PREFIX)/bin/geval
 		mkdir -p \$(PREFIX)/lib
 		cp libgpl.a \$(PREFIX)/lib/
 		mkdir -p \$(PREFIX)/include
@@ -517,6 +516,7 @@ echo "uninstall:" >> makefile
 echo -ne "\t\trm -i " >> makefile
 echo -n "\$(PREFIX)/lib/libgpl.a " >> makefile
 echo -n "\$(PREFIX)/include/gpl.mod " >> makefile
+echo -n "\$(PREFIX)/bin/geval " >> makefile
 $HAVE_MCC && echo -n "\$(MMPREFIX)/gpl" >> makefile
 cat  >> makefile <<EOF
 
@@ -526,10 +526,10 @@ check: test
 
 clean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
-		@rm -f test eval libgpl.a gpl
+		@rm -f test geval libgpl.a gpl
 
 distclean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
-		@rm -f test eval libgpl.a gpl
+		@rm -f test geval libgpl.a gpl
 		@rm -f makefile
 EOF
