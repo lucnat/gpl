@@ -1,0 +1,535 @@
+#! /bin/bash
+# configure script
+# note: has nothing to do with GNU autoconf
+
+exec 2> ${LOGFILE:-/dev/null} 3>&1
+eval ${LOGFILE:+set -x}
+
+
+shopt -s nullglob
+export LC_ALL=C
+
+CONF_DIR="${0%/*}"
+CONF_OS="`uname -s`"
+CONF_MACH="`uname -m`"
+HAVE_GINAC=false
+HAVE_MCC=false
+CONF_BITS=
+
+CONF_FFLAGS=$FFLAGS
+CONF_CFLAGS=$CFLAGS
+CONF_CPPFLAGS=$CPPFLAGS
+CONF_LFLAGS=$LDFLAGS
+CONF_FC=$FC
+CONF_CC=$CC
+CONF_CXX=$CXX
+CONF_LD=$LD
+
+
+if [ "$CONF_OS" -eq "Darwin" ]; then
+    CONF_PREFIX=/usr/local/
+else
+    CONF_PREFIX=/usr/
+fi
+
+NATIVE=true
+DEBUG=false
+for arg in "$@" ; do
+    case "$arg" in
+        --debug)
+            DEBUG=true ;;
+        --prefix=*)
+            CONF_PREFIX="${arg#--prefix=}" ;;
+        --host=*)
+            CONF_TARGET="${arg#--host=}" ;;
+        --with-ginac)
+            HAVE_GINAC=true ;;
+        --with-mcc)
+            HAVE_MCC=true ;;
+        --mmprefix=*)
+            CONF_MMPREFIX="${arg#--mmprefix=}" ;;
+        --generic)
+            NATIVE=false ;;
+        --32)
+            CONF_BITS="-m32" ;;
+        --64)
+            CONF_BITS="-m64" ;;
+        -*)
+            echo "Warning: $arg is not a valid option." 1>&3 ;;
+        *=*)
+            eval "$arg" ;;
+        *)
+            echo "Warning: $arg is not a valid argument." 1>&3 ;;
+    esac
+done
+
+
+test=test$$
+trap "rm -fr $test* =." 0 1 2 3 15
+
+
+## look for some programs
+
+findprog() {
+    echo -n "looking for $1... " 1>&3
+    var="$2"
+    set -- ${!var:+"${!var}"} "${@:3}"
+    for prog in "$@" ; do
+        full="`type -P "$prog"`" && {
+            echo "$full" 1>&3
+            printf -v "CONF_$var" "%q" "$full"
+            return 0
+        }
+    done
+    echo "no $@ in your path" 1>&3
+    return 1
+}
+
+findlib() {
+    echo -n "looking for lib$1... " 1>&3
+    for flag in $CONF_LFLAGS ; do
+        case "$flag" in
+            -L* )
+                libfolder=${flag/-L/}
+                if [ -f "$libfolder/lib$1.so" ] ; then
+                    path=`readlink -f -- "$libfolder/lib$1.so"`
+                    echo $path 1>&3
+                    printf -v "CONF_$2" "%q" "$path"
+                    return 0
+                fi
+                if [ -f "$libfolder/lib$1.a" ] ; then
+                    path=`readlinf -f -- "$libfolder/lib$1.a"`
+                    echo $path 1>&3
+                    printf -v "CONF_$2" "%q" "$path"
+                    return 0
+                fi
+            ;;
+        esac
+    done
+    echo "not found" 1>&3
+    return 1
+}
+addflag() {
+    eval "CONF_$1=\"\${CONF_$1} ${@:2}\""
+}
+
+gnuflags() {
+    eval addflag FFLAGS -fdefault-real-8             # default double is 8 byte
+    eval addflag FFLAGS -cpp                         # C pre-processor
+    eval addflag FFLAGS -pedantic-errors -std=f2008  # folow f08 strictly
+    eval addflag FFLAGS -J build                     # where to put mods
+    eval addflag FFLAGS -Werror -Wall                # make every warning an error
+    eval addflag FFLAGS -Wno-uninitialized
+}
+
+findprog pkg-config PKGCONFIG pkg-config
+
+if [ -z $FC ]; then
+    findprog fortran FC  ifort gfortran  || exit 1
+fi
+
+
+set -- `eval $CONF_FC --version -c | sed '/^$/d;s/([^)]*)//;q' 2>&1`
+case "$1,$2,$3" in
+    GNU,Fortran,[123].*)
+        echo "Only version >= 4 are supported"
+        exit
+    ;;
+    GNU,Fortran,4.*)
+    echo "Code optimisation is *not* suported on gfortran 4"
+        gnuflags
+        eval addflag $CONF_BITS
+        if $DEBUG ; then
+            eval addflag FFLAGS -g -O0
+            eval addflag FFLAGS -ffpe-trap=invalid,overflow
+            eval addflag FFLAGS -fdump-core -fbacktrace
+            eval addflag FFLAGS -frange-check
+            eval addflag FFLAGS -DDEBUG
+        else
+            eval addflag FFLAGS -DRELEASE
+            $NATIVE && eval addflag FFLAGS -march=native -mtune=native
+        fi
+    ;;
+    GNU,Fortran,*)
+        gnuflags
+        eval addflag FFLAGS -Wno-maybe-uninitialized
+        eval addflag $CONF_BITS
+        if $DEBUG ; then
+            eval addflag FFLAGS -g -O0
+            eval addflag FFLAGS -ffpe-trap=invalid,overflow
+            eval addflag FFLAGS -fdump-core -fbacktrace
+            eval addflag FFLAGS -fcheck=all -frange-check
+            eval addflag FFLAGS -DDEBUG
+        else
+            eval addflag FFLAGS -DRELEASE -O3
+            $NATIVE && eval addflag FFLAGS -march=native -mtune=native
+        fi
+    ;;
+    ifort*)
+        eval addflag FFLAGS -autodouble
+        eval addflag FFLAGS -module build
+        eval addflag FFLAGS -fpp
+        eval addflag FFLAGS -stand f03
+        eval addflag $CONF_BITS
+        if $DEBUG ; then
+            eval addflag FFLAGS -g -O0
+            eval addflag FFLAGS -DDEBUG
+        else
+            eval addflag FFLAGS -DRELEASE -O3 -fast
+            $NATIVE && eval addflag FFLAGS -xHost
+        fi
+        if HAVE_GINAC ; then
+            echo "Option --with-ginac is incompatible with ifort, disabling"
+            HAVE_GINAC=false
+        fi
+        if HAVE_MCC ; then
+            echo "Option --with-mcc is incompatible with ifort, disabling"
+            HAVE_MCC=false
+        fi
+    ;;
+    *)
+        echo "Unknown compiler"
+        exit
+    ;;
+esac
+
+echo -n "extracting the Fortran libraries... " 1>&3
+
+rm -fr $test*
+
+tee $test.f90 << _EOF_ 1>&2
+    program test
+    integer i
+    common /uscore/ i
+    call exit(i)
+    end
+_EOF_
+
+while read line ; do
+  set -- ${line//[:,()]/ }
+  [[ "$1" =~ (/collect2|/ld|^ld)$ ]] && while test $# -gt 1 ; do
+    shift
+    case "$1" in
+    *.o | -lc*)
+      ;;
+    -l* | -L* | *.a)
+      FLDFLAGS+=" $1" ;;
+    -Bstatic | -Bdynamic | *.ld)
+      FLDFLAGS+=" -Wl,$1" ;;
+    /*)
+      FLDFLAGS+=" -L$1" ;;
+    -rpath*)
+      FLDFLAGS+=" -Wl,$1,$2"
+      shift ;;
+    -dynamic-linker)
+      shift ;;
+    esac
+  done
+done < <(eval $CONF_FC  -v -o $test $test.f90 2>&1)
+echo "ok" 1>&3
+
+eval addflag LFLAGS "$LDFLAGS $CONF_LDFLAGS $FLDFLAGS -L$CONF_PREFIX/lib"
+
+
+
+if ( $HAVE_GINAC || $HAVE_MCC ); then
+    findprog gcc CC clang gcc || exit 1
+    findprog g++ CXX clang++ g++ || exit 1
+    eval addflag CFLAGS "-std=c99"
+
+    ## does Fortran append underscores to symbols?
+
+    echo -n "does $CONF_FC append underscores... " 1>&3
+
+    tee $test-c.c << _EOF_ 1>&2
+int uscore_ = 95;
+int uscore = 59;
+_EOF_
+
+    for CONF_BITS in ${CONF_BITS:--m64 -m32} ; do
+      eval $CONF_CC $CONF_CFLAGS $CONF_BITS -c $test-c.c 1>&2 || continue
+      eval $CONF_FC  -o $test $test.f90 $test-c.o 1>&2 && break
+    done
+
+    ./$test
+    case $? in
+    95)
+      echo "yes" 1>&3
+      CONF_NOUNDERSCORE=0 ;;
+    59)
+      echo "no" 1>&3
+      CONF_NOUNDERSCORE=1 ;;
+    *)
+      echo "error linking Fortran and C" 1>&3
+      exit 1 ;;
+    esac
+
+else
+    $CONF_CC=
+    $CONF_CXX=
+    $CONF_CFLAGS=
+    $CONF_NOUNDERSCORE=
+fi
+
+
+if $HAVE_MCC ; then
+    PATH=$PATH:/Applications/Mathematica.app/Contents/MacOS/ findprog mathematica MATH math MathKernel math10 math11
+
+
+    # Checking Mathematica system id
+
+    echo -n "what is $CONF_MATH SystemID... " 1>&3
+
+    tee $test.m << _EOF_ 1>&2
+        Print["SYSID "<>ToString[\$SystemID]];
+        Print["INSTDIR "<>ToString[\$InstallationDirectory]];
+        Print["USERDIR "<>ToString[\$UserBaseDirectory]];
+_EOF_
+    $CONF_MATH < $test.m > $test.log
+    CONF_MATH_SYS=`cat $test.log | grep "SYSID"   | sed 's/.*SYSID //'`
+    CONF_MATH_DIR=`cat $test.log | grep "INSTDIR" | sed 's/.*INSTDIR //'`
+    CONF_MATH_USR=`cat $test.log | grep "USERDIR" | sed 's/.*USERDIR //'`
+    CONF_MMPREFIX=${CONF_MMPREFIX:=$CONF_MATH_USR/Kernel}
+    echo  $CONF_MATH_SYS 1>&3
+
+
+    # Finding mcc
+    CONF_COMPAD=$CONF_MATH_DIR/SystemFiles/Links/MathLink/DeveloperKit/$CONF_MATH_SYS/CompilerAdditions/
+    PATH=$CONF_COMPAD:$PATH findprog mcc MCC mcc
+
+    echo -n "looking for MLDK directory... " 1>&3
+    $CONF_MCC --internals > $test.int
+    CONF_MLDK=`cat $test.int | grep "MLDK Directory" | cut -f2 -d":"`
+    echo $CONF_MLDK 1>&3
+
+    arch=`cat $test.int | grep "Library Bit Type:" | cut -f2 -d":"` ; \
+    CONF_MCC_CFLAGS=`cat $test.int | grep "Compile Flags$arch:" | cut -f2 -d":"`
+    CONF_MCC_LFLAGS=`cat $test.int | grep "Linker Libraries" | cut -f2 -d":"`
+    cat $test.int | grep "Linker Libraries" | cut -f2 -d":"
+    if [ ! -z $CONF_BITS ]; then
+        if [ "$CONF_BITS" -ne "$MCC_BITS" ]; then
+            echo "mcc wants $MCC_BITS ($arch), $CONF_BITS selected." 1>&3
+            exit 1
+        fi
+    fi
+
+    if [[ $CONF_MCC_LFLAGS == *"uuid"* ]]; then
+        if ! findlib uuid UUID ; then
+            echo -n "improvising uuid... " 1>&3
+            CONF_MLIBDIR=$CONF_MATH_DIR/SystemFiles/Libraries/$CONF_MATH_SYS/
+            if [ -f $CONF_MLIBDIR/libuuid.a ]; then
+                CONF_MCC_LFLAGS="-L$CONF_MLIBDIR $CONF_MCC_LFLAGS"
+                echo "okay" 1>&3
+            else
+                echo "failed" 1>&3
+                exit 1
+            fi
+        fi
+    fi
+
+    # Finding MPREP
+    PATH=$CONF_COMPAD:$PATH findprog mprep MPREP mprep
+
+    ## can we do MathLink compilations
+    echo -n "do we have working MathLink... " 1>&3
+    tee $test.tm << _EOF_ 1>&2
+:Begin:
+:Function: test
+:Pattern: Test[i_Integer]
+:Arguments: {i}
+:ArgumentTypes: {Integer}
+:ReturnType: Integer
+:End:
+
+#include "mathlink.h"
+
+static int test(const int i) {
+  return i + 1;
+}
+
+int main(int argc, char **argv) {
+  return MLMain(argc, argv);
+}
+_EOF_
+    $CONF_MPREP $test.tm > $test.tm.c
+    $CONF_CC $CONF_MCC_CFLAGS $CONF_CFLAGS -c $test.tm.c
+    $CONF_CC -o $test.math $test.tm.o $CONF_MCC_LFLAGS
+    test -x $test.math && {
+        echo "yes" 1>&3
+        CONF_ML=1
+    } || {
+        echo "no" 1>&3
+        CONF_ML=0
+        exit 1;
+    }
+fi
+
+
+CONF_LD=${LD:-$CONF_FC}
+
+
+if $HAVE_GINAC ; then
+    eval addflag CPPFLAGS "-std=c++11"
+    if [[ ! -z "$CONF_PKGCONFIG" ]]; then
+        echo -n "Does pkg-config know about GiNaC... " 1>&3
+        if $CONF_PKGCONFIG --exists ginac ; then
+            echo "yes" 1>&3
+            eval addflag CPPFLAGS `$CONF_PKGCONFIG --cflags ginac`
+            eval addflag LFLAGS `$CONF_PKGCONFIG --libs ginac`
+            FOUND_GINAC=true
+            CONF_GINAC=`$CONF_PKGCONFIG --libs-only-L ginac`
+        else
+            echo "no" 1>&3
+            FOUND_GINAC=false
+        fi
+    fi
+    if ! $FOUNDGINAC ; then
+        FOUNDGINAC=`findlib ginac GINAC && findlib cln CLN`
+        eval addflag LFLAGS "-L`dirname $CONF_GINAC`"
+        eval addflag LFLAGS "-L`dirname $CONF_CLN`"
+        eval addflag LFLAGS "-lginac -lcln"
+    fi
+    if $FOUNDGINAC; then
+        CONF_LD=${LD:-$CONF_CXX}
+        echo -n "Checking if GiNaC works... " 1>&3
+        tee $test.ginac.cpp << _EOF_ 1>&2
+#include <ginac/ginac.h>
+#include <iostream>
+int main() {
+
+    GiNaC::ex ans = GiNaC::G(0.3,0.5,0.7);
+    ans -= 0.2876820724517808812+3.1415926535897932385*GiNaC::I;
+    ans = GiNaC::abs(ans);
+    if (ans<1e-15)
+        return 0;
+    else
+        return 1;
+}
+_EOF_
+        $CONF_CXX $CONF_CPPFLAGS $CONF_BITS -c $test.ginac.cpp
+        $CONF_LD -o $test.ginac $test.ginac.o $CONF_LFLAGS
+        ./$test.ginac
+        case $? in
+            0)
+              echo "yes" 1>&3
+              eval addflag FFLAGS "-DHAVE_GINAC" ;;
+            1)
+              echo "no" 1>&3
+              exit 1 ;;
+            *)
+              echo "error running GiNaC" 1>&3
+              exit 1 ;;
+        esac
+    else
+        echo "GiNaC could not be found" 1>&3
+        exit 1
+    fi
+fi
+
+
+
+echo "creating makefile" 1>&3
+
+
+cat  > makefile <<EOF
+# Generated through $0 $@ on `date` by `whoami`
+
+AR=ar rcs
+FC=$CONF_FC
+CC=$CONF_CC
+CXX=$CONF_CXX
+LD=$CONF_LD
+MPREP=$CONF_MPREP
+
+FFLAGS=$CONF_FFLAGS
+CFLAGS=$CONF_CFLAGS
+CPPFLAGS=$CONF_CPPFLAGS
+LFLAGS=$CONF_LFLAGS
+MCFLAGS=$CONF_MCC_CFLAGS
+MLFLAGS=$CONF_MCC_LFLAGS
+
+PREFIX=$CONF_PREFIX
+MMPREFIX=$CONF_MMPREFIX
+
+
+files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o GPL.o
+objects = \$(addprefix build/,\$(files))
+
+
+all: libgpl.a ${CONF_MPREP:+gpl} eval test
+
+libgpl.a:\$(objects)
+		@echo "AR \$@"
+		@\$(AR) \$@ $^
+
+# rules to make object files into /build
+build/%.o: src/%.f90
+		@echo "F90 \$@"
+		@\$(FC) \$(FFLAGS) -c $< -o \$@
+
+build/%.o: src/%.cpp
+		@echo "C++ \$@"
+		@\$(CC) \$(CPPFLAGS) -c $<  -o \$@
+
+EOF
+
+$HAVE_MCC && cat >> makefile <<EOF
+build/%.tm.c: src/%.tm
+		@echo "MPREP \$@"
+		@\$(MPREP) \$< -o \$@
+
+build/mathlink.o: build/mathlink.tm.c
+		@echo "CC \$<"
+		@\$(CC) \$(MCFLAGS) \$(CFLAGS) -o \$@ -c \$<
+
+gpl: build/mathlink.o libgpl.a
+		@echo "LD \$@"
+		@\$(LD)  $< libgpl.a -o \$@ \$(LFLAGS) \$(MLFLAGS)
+EOF
+
+cat  >> makefile <<EOF
+
+
+eval: libgpl.a build/eval.o
+		@echo "LD \$@"
+		@\$(LD) -o \$@ build/eval.o -L. -lgpl \$(LFLAGS)
+
+
+test: \$(objects) ${CONF_GINAC:+build/ginac.o} build/test.o
+		@echo "LD \$@"
+		@\$(LD) -o \$@ $^ \$(LFLAGS)
+
+install: libgpl.a build/gpl.mod ${CONF_MPREP:+gpl} eval
+		mkdir -p \$(PREFIX)
+		mkdir -p \$(PREFIX)/bin
+		cp eval \$(PREFIX)/bin/geval
+		mkdir -p \$(PREFIX)/lib
+		cp libgpl.a \$(PREFIX)/lib/
+		mkdir -p \$(PREFIX)/include
+		cp build/gpl.mod \$(PREFIX)/include/
+EOF
+$HAVE_MCC && cat >> makefile <<EOF
+		mkdir -p \$(MMPREFIX)
+		cp gpl \$(MMPREFIX)
+EOF
+
+echo "uninstall:" >> makefile
+echo -ne "\t\trm -i " >> makefile
+echo -n "\$(PREFIX)/lib/libgpl.a " >> makefile
+echo -n "\$(PREFIX)/include/gpl.mod " >> makefile
+$HAVE_MCC && echo -n "\$(MMPREFIX)/gpl" >> makefile
+cat  >> makefile <<EOF
+
+
+check: test
+		./$<
+
+clean:
+		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
+		@rm -f test eval libgpl.a gpl
+
+distclean:
+		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
+		@rm -f test eval libgpl.a gpl
+		@rm -f makefile
+EOF
