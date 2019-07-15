@@ -498,8 +498,10 @@ test: \$(objects) ${CONF_GINAC:+build/ginac.o} build/test.o
 		@echo "LD \$@"
 		@\$(LD) -o \$@ $^ \$(LFLAGS)
 
-install: libgpl.a build/gpl.mod ${CONF_MPREP:+gpl}
+install: libgpl.a build/gpl.mod ${CONF_MPREP:+gpl} eval
 		mkdir -p \$(PREFIX)
+		mkdir -p \$(PREFIX)/bin
+		cp eval \$(PREFIX)/bin/geval
 		mkdir -p \$(PREFIX)/lib
 		cp libgpl.a \$(PREFIX)/lib/
 		mkdir -p \$(PREFIX)/include
