@@ -5,11 +5,26 @@ PROGRAM eval
 
   complex(kind=prec) :: res
   character(len=20) line
-  integer io
+  integer io, u
   io=0
+
+  call get_command_argument(1, line)
+  if ( (len(trim(line)).eq.0) .or. (trim(line) == '--help')) then
+    print*, "Usage: geval filename"
+    print*, "filename is either a file or - indicating stdin"
+    stop
+  endif
+
+  if (trim(line) == '-') then
+    u=5
+  else
+    u=24
+    open(unit=u, file=trim(line))
+  endif
+
   do while(io.eq.0)
     line(:)="*"
-    read(5,fmt='(A)',iostat=io) line
+    read(u,fmt='(A)',iostat=io) line
     if (len(trim(line)).eq.0) exit
     if (io.eq.0) then
       res = parseline(line)
@@ -22,6 +37,8 @@ PROGRAM eval
       endif
     endif
   enddo
+
+  if (u .ne. 5) close(unit=u)
 
 CONTAINS
 
