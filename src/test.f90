@@ -29,6 +29,7 @@ PROGRAM TEST
 #ifdef HAVE_GINAC
 #ifdef HAVE_MM
   call do_ginac_tests
+  call do_timing_tests(5)
 #endif
 #endif
 
@@ -251,6 +252,105 @@ CONTAINS
     call perform_ginacv( 8, inimuonenp(cmplx(0.3), cmplx(0.6)) )
 
   end subroutine
+
+  subroutine do_one_speed_test(args, u, msg)
+    use maths_functions, only:clearcache
+    implicit none
+    complex(kind=prec) :: args(:,:,:),res
+    real(kind=prec) :: tstart, tend, time(2), ttime(2)
+    integer i,j, u
+    character,parameter :: cr = achar(13)
+    character(len=*) msg
+    do j=1,size(args,1)
+      ! try function a bunch of times
+      call cpu_time(tstart)
+      do i=1,size(args,3)
+        res=evalt(args(j,:,i),0)
+      enddo
+      call cpu_time(tend)
+      time(1) = (tend-tstart)/size(args,3)
+      if (time(1).lt.zero) print*,j
+      ttime(1) = ttime(1) + time(1)
+
+      call cpu_time(tstart)
+      do i=1,size(args,3)
+        res=evalt(args(j,:,i),1)
+      enddo
+      call cpu_time(tend)
+      time(2) = (tend-tstart)/size(args,3)
+      if (time(2).lt.zero) print*,j
+      ttime(2) = ttime(2) + time(2)
+
+      write(u,*) time
+
+      write( * , 900, advance='no' ) cr, j, size(args,1), msg
+    enddo
+    print*,
+    write(*,901) msg, size(args,1)/ttime(2)/1000., size(args,1)/ttime(1)/1000., int(ttime(2)/ttime(1))
+
+900 FORMAT(a , 'Function ',i4,'/',i4,' for ',a)
+901 format('Evaluating ',A,' using GiNaC at ',F9.2,'kG/s and GPL at ',F9.2,'kG/s (',I3,'x)')
+  end subroutine
+
+  subroutine do_timing_tests(n)
+    use gtestchen   , only: inichen   =>args
+    use gtestmuone  , only: inimuone  =>args
+    use gtestmuonenp, only: inimuonenp=>args
+    implicit none
+    integer, intent(in) :: n
+    integer i
+    complex(kind=prec) :: cargs( 1399,5,n)
+    complex(kind=prec) :: pargs(  198,5,n)
+    complex(kind=prec) :: nargs( 1733,5,n)
+    real(kind=prec) :: z, x, y, w
+    integer ranseed
+    ranseed = 233123
+
+    do i=1,n
+      z = ran2(ranseed) / 2.
+      x = ran2(ranseed)*(1-z) + z
+      cargs(:,:,i) = inichen(cmplx(x), cmplx(z))
+
+      w = ran2(ranseed) ! 0<w<1
+      z = ran2(ranseed) * (sqrt(1-w+w**2)-sqrt(w)) + sqrt(w)
+      nargs(:,:,i) = inimuonenp(cmplx(w), cmplx(z))
+
+      x = ran2(ranseed)
+      y = ran2(ranseed)
+      pargs(:,:,i) = inimuone(cmplx(x), cmplx(y))
+    enddo
+
+    cargs(1181,:,:)=cargs(1181,:,:)/0
+
+
+    open(unit=9, file="stats.txt")
+    write(9,*) "Chen"
+    call do_one_speed_test(cargs,9,"Chen")
+    write(9,*) "MUonE-planar"
+    call do_one_speed_test(pargs,9,"Muone planar")
+    write(9,*) "MUonE-non-planar"
+    call do_one_speed_test(nargs,9,"Muone non planar")
+    close(unit=9)
+
+  end subroutine
+
+      FUNCTION RAN2(randy)
+
+            ! This is the usual "random"
+
+      implicit none
+      real(kind=prec) :: MINV,RAN2
+      integer m,a,Qran,r,hi,lo,randy
+      PARAMETER(M=2147483647,A=16807,Qran=127773,R=2836)
+      PARAMETER(MINV=0.46566128752458e-09)
+      HI = RANDY/Qran
+      LO = MOD(RANDY,Qran)
+      RANDY = A*LO - R*HI
+      IF(RANDY.LE.0) RANDY = RANDY + M
+      RAN2 = RANDY*MINV
+      END FUNCTION RAN2
+
+
 
 
 #endif
