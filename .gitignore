@@ -2,6 +2,7 @@
 !/**/
 !*.*
 makefile
+checks/*.f90
 ### Vim ###
 # Swap
 [._]*.s[a-v][a-z]
