@@ -275,7 +275,7 @@ fi
 
 if $HAVE_MCC ; then
     PATH=$PATH:/Applications/Mathematica.app/Contents/MacOS/ findprog mathematica MATH math MathKernel math10 math11
-
+    eval addflag FFLAGS -DHAVE_MM
 
     # Checking Mathematica system id
 
@@ -441,6 +441,7 @@ CC=$CONF_CC
 CXX=$CONF_CXX
 LD=$CONF_LD
 MPREP=$CONF_MPREP
+MATH=$CONF_MATH
 
 FFLAGS=$CONF_FFLAGS
 CFLAGS=$CONF_CFLAGS
@@ -465,6 +466,10 @@ libgpl.a:\$(objects)
 
 # rules to make object files into /build
 build/%.o: src/%.f90
+		@echo "F90 \$@"
+		@\$(FC) \$(FFLAGS) -c $< -o \$@
+
+build/%.o: checks/%.f90
 		@echo "F90 \$@"
 		@\$(FC) \$(FFLAGS) -c $< -o \$@
 
@@ -502,8 +507,17 @@ checks/test-muoneNP.f90: checks/generate.m
 		@\$(MATH) -script \$< \$@
 
 
+EOF
+echo -n "test: \$(objects) " >> makefile
 
-test: \$(objects) ${CONF_GINAC:+build/ginac.o} build/test.o
+                            echo -n "build/test-chenref.o " >> makefile
+$HAVE_GINAC              && echo -n "build/ginac.o " >> makefile
+$HAVE_GINAC && $HAVE_MCC && echo -n "build/test-chen.o " >> makefile
+$HAVE_GINAC && $HAVE_MCC && echo -n "build/test-muone.o " >> makefile
+$HAVE_GINAC && $HAVE_MCC && echo -n "build/test-muoneNP.o " >> makefile
+
+echo "build/test.o" >> makefile
+cat  >> makefile <<EOF
 		@echo "LD \$@"
 		@\$(LD) -o \$@ $^ \$(LFLAGS)
 
@@ -536,9 +550,11 @@ check: test
 clean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
 		@rm -f test geval libgpl.a gpl
+		@rm -f checks/*.f90
 
 distclean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
 		@rm -f test geval libgpl.a gpl
+		@rm -f checks/*.f90
 		@rm -f makefile
 EOF
