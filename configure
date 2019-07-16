@@ -120,6 +120,7 @@ gnuflags() {
     eval addflag FFLAGS -J build                     # where to put mods
     eval addflag FFLAGS -Werror -Wall                # make every warning an error
     eval addflag FFLAGS -Wno-uninitialized
+    eval addflag FFLAGS -ffree-line-length-0
 }
 
 findprog pkg-config PKGCONFIG pkg-config
@@ -471,6 +472,10 @@ build/%.o: src/%.cpp
 		@echo "C++ \$@"
 		@\$(CC) \$(CPPFLAGS) -c $<  -o \$@
 
+geval: libgpl.a build/geval.o
+		@echo "LD \$@"
+		@\$(LD) -o \$@ build/geval.o -L. -lgpl \$(LFLAGS)
+
 EOF
 
 $HAVE_MCC && cat >> makefile <<EOF
@@ -484,15 +489,19 @@ build/mathlink.o: build/mathlink.tm.c
 
 gpl: build/mathlink.o libgpl.a
 		@echo "LD \$@"
-		@\$(LD)  $< libgpl.a -o \$@ \$(LFLAGS) \$(MLFLAGS)
-EOF
+		@\$(LD)  \$< libgpl.a -o \$@ \$(LFLAGS) \$(MLFLAGS)
 
-cat  >> makefile <<EOF
+checks/test-chen.f90: checks/generate.m
+		@echo "MATH generate \$@"
+		@\$(MATH) -script \$< \$@
+checks/test-muone.f90: checks/generate.m
+		@echo "MATH generate \$@"
+		@\$(MATH) -script \$< \$@
+checks/test-muoneNP.f90: checks/generate.m
+		@echo "MATH generate \$@"
+		@\$(MATH) -script \$< \$@
 
 
-geval: libgpl.a build/geval.o
-		@echo "LD \$@"
-		@\$(LD) -o \$@ build/geval.o -L. -lgpl \$(LFLAGS)
 
 test: \$(objects) ${CONF_GINAC:+build/ginac.o} build/test.o
 		@echo "LD \$@"
