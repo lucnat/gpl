@@ -14,9 +14,6 @@ PROGRAM TEST
   complex(kind=prec) :: res 
   real :: tol = 8.0e-7
   logical :: tests_successful = .true. 
-#ifdef HAVE_GINAC
-  character(len=6) :: ginacwhat
-#endif
 
 #ifdef DEBUG
   call parse_cmd_args()
@@ -30,13 +27,9 @@ PROGRAM TEST
   tests_successful = tests_successful .and. do_chen_test(cmplx(0.3),cmplx(0.1))
 
 #ifdef HAVE_GINAC
-  tol = 2.0e-5
-  ginacwhat = 'values'
-  call do_muone_tests(cmplx(0.4),cmplx(.7),"")
-  ginacwhat = 'speed1'
-  call do_muone_tests(cmplx(0.4),cmplx(.7),"using GiNaC")
-  ginacwhat = 'speed2'
-  call do_muone_tests(cmplx(0.4),cmplx(.7),"using GPL")
+#ifdef HAVE_MM
+  call do_ginac_tests
+#endif
 #endif
 
   if(tests_successful) then
@@ -205,230 +198,61 @@ CONTAINS
 
 
 #ifdef HAVE_GINAC
-  subroutine test_one_ginac(z,test_id)
-    complex(kind=prec) :: z(:), res, ref, geval
-    character(len=*) :: test_id
-    if (ginacwhat=="values") then
-      print*, '  ', 'testing GPL ', test_id, ' ...'
-      ref = geval(z,size(z))
-      res = G(z)
-      call check(res,ref)
-    elseif (ginacwhat=="speed1") then
-      ref = geval(z,size(z))
-    elseif (ginacwhat=="speed2") then
-      res = G(z)
-    endif
-  end subroutine
-  subroutine do_muone_tests(x,y,msg)
-    use maths_functions, only:clearcache
-    complex(kind=prec) x, y
-    real(kind=prec) tstart, tend
-    character(len=*) :: msg
-    call clearcache
-    call cpu_time(tstart)
-    call test_one_ginac([(-1.,0.),x],'6.1')
-    call test_one_ginac([(-1.,0.),(-1.,0.),x],'6.2')
-    call test_one_ginac([(0.,0.),(-1.,0.),x],'6.3')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(-1.,0.),x],'6.4')
-    call test_one_ginac([(-1.,0.),(0.,0.),(-1.,0.),x],'6.5')
-    call test_one_ginac([(0.,0.),(-1.,0.),(-1.,0.),x],'6.6')
-    call test_one_ginac([(0.,0.),(0.,0.),(-1.,0.),x],'6.7')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(-1.,0.),(-1.,0.),x],'6.8')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(0.,0.),(-1.,0.),x],'6.9')
-    call test_one_ginac([(-1.,0.),(0.,0.),(-1.,0.),(-1.,0.),x],'6.10')
-    call test_one_ginac([(-1.,0.),(0.,0.),(0.,0.),(-1.,0.),x],'6.11')
-    call test_one_ginac([(0.,0.),(-1.,0.),(-1.,0.),(-1.,0.),x],'6.12')
-    call test_one_ginac([(0.,0.),(-1.,0.),(0.,0.),(-1.,0.),x],'6.13')
-    call test_one_ginac([(0.,0.),(0.,0.),(-1.,0.),(-1.,0.),x],'6.14')
-    call test_one_ginac([(0.,0.),(0.,0.),(0.,0.),(-1.,0.),x],'6.15')
-    call test_one_ginac([(0.,0.),y],'6.16')
-    call test_one_ginac([(1.,0.),y],'6.17')
-    call test_one_ginac([(0.,0.),(0.,0.),y],'6.18')
-    call test_one_ginac([(0.,0.),(1.,0.),y],'6.19')
-    call test_one_ginac([(1.,0.),(0.,0.),y],'6.20')
-    call test_one_ginac([(1.,0.),(1.,0.),y],'6.21')
-    call test_one_ginac([(0.,0.),(0.,0.),(0.,0.),y],'6.22')
-    call test_one_ginac([(0.,0.),(0.,0.),(1.,0.),y],'6.23')
-    call test_one_ginac([(0.,0.),(1.,0.),(0.,0.),y],'6.24')
-    call test_one_ginac([(0.,0.),(1.,0.),(1.,0.),y],'6.25')
-    call test_one_ginac([(1.,0.),(0.,0.),(0.,0.),y],'6.26')
-    call test_one_ginac([(1.,0.),(0.,0.),(1.,0.),y],'6.27')
-    call test_one_ginac([(1.,0.),(1.,0.),(0.,0.),y],'6.28')
-    call test_one_ginac([(1.,0.),(1.,0.),(1.,0.),y],'6.29')
-    call test_one_ginac([(0.,0.),(0.,0.),(0.,0.),(0.,0.),y],'6.30')
-    call test_one_ginac([(0.,0.),(0.,0.),(0.,0.),(1.,0.),y],'6.31')
-    call test_one_ginac([(0.,0.),(0.,0.),(1.,0.),(0.,0.),y],'6.32')
-    call test_one_ginac([(0.,0.),(0.,0.),(1.,0.),(1.,0.),y],'6.33')
-    call test_one_ginac([(0.,0.),(1.,0.),(0.,0.),(0.,0.),y],'6.34')
-    call test_one_ginac([(0.,0.),(1.,0.),(0.,0.),(1.,0.),y],'6.35')
-    call test_one_ginac([(0.,0.),(1.,0.),(1.,0.),(0.,0.),y],'6.36')
-    call test_one_ginac([(0.,0.),(1.,0.),(1.,0.),(1.,0.),y],'6.37')
-    call test_one_ginac([(1.,0.),(0.,0.),(0.,0.),(0.,0.),y],'6.38')
-    call test_one_ginac([(1.,0.),(0.,0.),(0.,0.),(1.,0.),y],'6.39')
-    call test_one_ginac([(1.,0.),(0.,0.),(1.,0.),(0.,0.),y],'6.40')
-    call test_one_ginac([(1.,0.),(0.,0.),(1.,0.),(1.,0.),y],'6.41')
-    call test_one_ginac([(1.,0.),(1.,0.),(0.,0.),(0.,0.),y],'6.42')
-    call test_one_ginac([(1.,0.),(1.,0.),(0.,0.),(1.,0.),y],'6.43')
-    call test_one_ginac([(1.,0.),(1.,0.),(1.,0.),(0.,0.),y],'6.44')
-    call test_one_ginac([(1.,0.),(1.,0.),(1.,0.),(1.,0.),y],'6.45')
-    call test_one_ginac([(-1.,0.),y],'6.46')
-    call test_one_ginac([(-1.,0.),(0.,0.),(0.,0.),y],'6.47')
-    call test_one_ginac([(-1.,0.),(0.,0.),(1.,0.),y],'6.48')
-    call test_one_ginac([(-1.,0.),(-1.,0.),y],'6.49')
-    call test_one_ginac([(-1.,0.),(0.,0.),y],'6.50')
-    call test_one_ginac([(-1.,0.),(1.,0.),y],'6.51')
-    call test_one_ginac([(0.,0.),(-1.,0.),y],'6.52')
-    call test_one_ginac([(1.,0.),(-1.,0.),y],'6.53')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(0.,0.),(0.,0.),y],'6.54')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(0.,0.),(1.,0.),y],'6.55')
-    call test_one_ginac([(-1.,0.),(0.,0.),(0.,0.),(0.,0.),y],'6.56')
-    call test_one_ginac([(-1.,0.),(0.,0.),(0.,0.),(1.,0.),y],'6.57')
-    call test_one_ginac([(-1.,0.),(0.,0.),(1.,0.),(0.,0.),y],'6.58')
-    call test_one_ginac([(-1.,0.),(0.,0.),(1.,0.),(1.,0.),y],'6.59')
-    call test_one_ginac([(-1.,0.),(1.,0.),(0.,0.),(0.,0.),y],'6.60')
-    call test_one_ginac([(-1.,0.),(1.,0.),(0.,0.),(1.,0.),y],'6.61')
-    call test_one_ginac([(0.,0.),(-1.,0.),(0.,0.),(0.,0.),y],'6.62')
-    call test_one_ginac([(0.,0.),(-1.,0.),(0.,0.),(1.,0.),y],'6.63')
-    call test_one_ginac([(1.,0.),(-1.,0.),(0.,0.),(0.,0.),y],'6.64')
-    call test_one_ginac([(1.,0.),(-1.,0.),(0.,0.),(1.,0.),y],'6.65')
-    call test_one_ginac([-(1/y),x],'6.66')
-    call test_one_ginac([-y,x],'6.67')
-    call test_one_ginac([-(1/y),(-1.,0.),x],'6.68')
-    call test_one_ginac([-y,(-1.,0.),x],'6.69')
-    call test_one_ginac([-(1/y),(-1.,0.),(-1.,0.),x],'6.70')
-    call test_one_ginac([-(1/y),(0.,0.),(-1.,0.),x],'6.71')
-    call test_one_ginac([-y,(-1.,0.),(-1.,0.),x],'6.72')
-    call test_one_ginac([-y,(0.,0.),(-1.,0.),x],'6.73')
-    call test_one_ginac([1 - 1/y - y,-(1/y),x],'6.74')
-    call test_one_ginac([-(1/y),-(1/y),x],'6.75')
-    call test_one_ginac([-y,-(1/y),x],'6.76')
-    call test_one_ginac([1 - 1/y - y,x],'6.77')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(0.,0.),y],'6.78')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(1.,0.),y],'6.79')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),y],'6.80')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(1.,0.),y],'6.81')
-    call test_one_ginac([1 - 1/y - y,(-1.,0.),x],'6.82')
-    call test_one_ginac([1 - 1/y - y,-y,x],'6.83')
-    call test_one_ginac([-(1/y),-y,x],'6.84')
-    call test_one_ginac([-y,-y,x],'6.85')
-    call test_one_ginac([1 - 1/y - y,-(1/y),(-1.,0.),x],'6.86')
-    call test_one_ginac([1 - 1/y - y,-y,(-1.,0.),x],'6.87')
-    call test_one_ginac([-(1/y),-(1/y),(-1.,0.),x],'6.88')
-    call test_one_ginac([-(1/y),-y,(-1.,0.),x],'6.89')
-    call test_one_ginac([-y,-(1/y),(-1.,0.),x],'6.90')
-    call test_one_ginac([-y,-y,(-1.,0.),x],'6.91')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(0.,0.),(0.,0.),(0.,0.),y],'6.92')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(0.,0.),(0.,0.),(1.,0.),y],'6.93')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(0.,0.),(1.,0.),(0.,0.),y],'6.94')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(0.,0.),(1.,0.),(1.,0.),y],'6.95')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(1.,0.),(0.,0.),(0.,0.),y],'6.96')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(1.,0.),(0.,0.),(1.,0.),y],'6.97')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(1.,0.),(1.,0.),(0.,0.),y],'6.98')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),(1.,0.),(1.,0.),(1.,0.),y],'6.99')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),(0.,0.),(0.,0.),y],'6.100')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),(0.,0.),(1.,0.),y],'6.101')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),(1.,0.),(0.,0.),y],'6.102')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),(1.,0.),(1.,0.),y],'6.103')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(1.,0.),(0.,0.),(0.,0.),y],'6.104')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(1.,0.),(0.,0.),(1.,0.),y],'6.105')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(1.,0.),(1.,0.),(0.,0.),y],'6.106')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(1.,0.),(1.,0.),(1.,0.),y],'6.107')
-    call test_one_ginac([1 - 1/y - y,(-1.,0.),(0.,0.),(-1.,0.),x],'6.108')
-    call test_one_ginac([1 - 1/y - y,-(1/y),(-1.,0.),(-1.,0.),x],'6.109')
-    call test_one_ginac([1 - 1/y - y,-(1/y),(0.,0.),(-1.,0.),x],'6.110')
-    call test_one_ginac([1 - 1/y - y,-y,(-1.,0.),(-1.,0.),x],'6.111')
-    call test_one_ginac([1 - 1/y - y,-y,(0.,0.),(-1.,0.),x],'6.112')
-    call test_one_ginac([-(1/y),(-1.,0.),(-1.,0.),(-1.,0.),x],'6.113')
-    call test_one_ginac([-(1/y),(-1.,0.),(0.,0.),(-1.,0.),x],'6.114')
-    call test_one_ginac([-(1/y),(0.,0.),(-1.,0.),(-1.,0.),x],'6.115')
-    call test_one_ginac([-(1/y),(0.,0.),(0.,0.),(-1.,0.),x],'6.116')
-    call test_one_ginac([-(1/y),-(1/y),(-1.,0.),(-1.,0.),x],'6.117')
-    call test_one_ginac([-(1/y),-(1/y),(0.,0.),(-1.,0.),x],'6.118')
-    call test_one_ginac([-(1/y),-y,(-1.,0.),(-1.,0.),x],'6.119')
-    call test_one_ginac([-(1/y),-y,(0.,0.),(-1.,0.),x],'6.120')
-    call test_one_ginac([-y,(-1.,0.),(-1.,0.),(-1.,0.),x],'6.121')
-    call test_one_ginac([-y,(-1.,0.),(0.,0.),(-1.,0.),x],'6.122')
-    call test_one_ginac([-y,(0.,0.),(-1.,0.),(-1.,0.),x],'6.123')
-    call test_one_ginac([-y,(0.,0.),(0.,0.),(-1.,0.),x],'6.124')
-    call test_one_ginac([-y,-(1/y),(-1.,0.),(-1.,0.),x],'6.125')
-    call test_one_ginac([-y,-(1/y),(0.,0.),(-1.,0.),x],'6.126')
-    call test_one_ginac([-y,-y,(-1.,0.),(-1.,0.),x],'6.127')
-    call test_one_ginac([-y,-y,(0.,0.),(-1.,0.),x],'6.128')
-    call test_one_ginac([cmplx(0.5,-sqrt(3.)/2.),y],'6.129')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),y],'6.130')
-    call test_one_ginac([(-1.,0.),-y,x],'6.131')
-    call test_one_ginac([(-1.,0.),-(1/y),x],'6.132')
-    call test_one_ginac([(-1.,0.),-(1/y),(-1.,0.),x],'6.133')
-    call test_one_ginac([(-1.,0.),-y,(-1.,0.),x],'6.134')
-    call test_one_ginac([(-1.,0.),-(1/y),(-1.,0.),(-1.,0.),x],'6.135')
-    call test_one_ginac([(-1.,0.),-(1/y),(0.,0.),(-1.,0.),x],'6.136')
-    call test_one_ginac([(-1.,0.),-y,(-1.,0.),(-1.,0.),x],'6.137')
-    call test_one_ginac([(-1.,0.),-y,(0.,0.),(-1.,0.),x],'6.138')
-    call test_one_ginac([(0.,0.),-(1/y),x],'6.139')
-    call test_one_ginac([(0.,0.),-y,x],'6.140')
-    call test_one_ginac([(0.,0.),-(1/y),(-1.,0.),x],'6.141')
-    call test_one_ginac([(0.,0.),-y,(-1.,0.),x],'6.142')
-    call test_one_ginac([(0.,0.),-(1/y),(-1.,0.),(-1.,0.),x],'6.143')
-    call test_one_ginac([(0.,0.),-(1/y),(0.,0.),(-1.,0.),x],'6.144')
-    call test_one_ginac([(0.,0.),-y,(-1.,0.),(-1.,0.),x],'6.145')
-    call test_one_ginac([(0.,0.),-y,(0.,0.),(-1.,0.),x],'6.146')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(0.,0.),y],'6.147')
-    call test_one_ginac([(0.,0.),(-1.,0.),(0.,0.),y],'6.148')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(-1.,0.),(0.,0.),y],'6.149')
-    call test_one_ginac([(-1.,0.),(0.,0.),(-1.,0.),(0.,0.),y],'6.150')
-    call test_one_ginac([(0.,0.),(-1.,0.),(-1.,0.),(0.,0.),y],'6.151')
-    call test_one_ginac([(0.,0.),(0.,0.),(-1.,0.),(0.,0.),y],'6.152')
-    call test_one_ginac([(0.,0.),(-1.,0.),(1.,0.),(0.,0.),y],'6.153')
-    call test_one_ginac([(0.,0.),(1.,0.),(-1.,0.),(0.,0.),y],'6.154')
-    call test_one_ginac([(1.,0.),(0.,0.),(-1.,0.),(0.,0.),y],'6.155')
-    call test_one_ginac([(-1.,0.),(1.,0.),(0.,0.),y],'6.156')
-    call test_one_ginac([(1.,0.),(-1.,0.),(0.,0.),y],'6.157')
-    call test_one_ginac([(-1.,0.),(-1.,0.),(1.,0.),(0.,0.),y],'6.158')
-    call test_one_ginac([(-1.,0.),(1.,0.),(-1.,0.),(0.,0.),y],'6.159')
-    call test_one_ginac([(-1.,0.),(1.,0.),(1.,0.),(0.,0.),y],'6.160')
-    call test_one_ginac([(1.,0.),(-1.,0.),(-1.,0.),(0.,0.),y],'6.161')
-    call test_one_ginac([(1.,0.),(-1.,0.),(1.,0.),(0.,0.),y],'6.162')
-    call test_one_ginac([(1.,0.),(1.,0.),(-1.,0.),(0.,0.),y],'6.163')
-    call test_one_ginac([(0.,0.),(1.,0.),x],'6.164')
-    call test_one_ginac([(0.,0.),(1.,0.),(0.,0.),(-1.,0.),x],'6.165')
-    call test_one_ginac([(1.,0.),(0.,0.),(-1.,0.),x],'6.166')
-    call test_one_ginac([(1.,0.),x],'6.167')
-    call test_one_ginac([(-1.,0.),(1.,0.),(0.,0.),(-1.,0.),x],'6.168')
-    call test_one_ginac([(1.,0.),(-1.,0.),(0.,0.),(-1.,0.),x],'6.169')
-    call test_one_ginac([(1.,0.),(0.,0.),(-1.,0.),(-1.,0.),x],'6.170')
-    call test_one_ginac([(1.,0.),(0.,0.),(0.,0.),(-1.,0.),x],'6.171')
-    call test_one_ginac([(1.,0.),(1.,0.),(0.,0.),(-1.,0.),x],'6.172')
-    call test_one_ginac([(-1.,0.),(1.,0.),x],'6.173')
-    call test_one_ginac([(1.,0.),(-1.,0.),x],'6.174')
-    call test_one_ginac([(1.,0.),(1.,0.),x],'6.175')
-    call test_one_ginac([-(1/y),(1.,0.),x],'6.176')
-    call test_one_ginac([-y,(1.,0.),x],'6.177')
-    call test_one_ginac([-(1/y),(1.,0.),(0.,0.),(-1.,0.),x],'6.178')
-    call test_one_ginac([-y,(1.,0.),(0.,0.),(-1.,0.),x],'6.179')
-    call test_one_ginac([(-1 + y - y**2)/y,x],'6.180')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),y],'6.181')
-    call test_one_ginac([-cmplx(-0.5,sqrt(3.)/2.),(0.,0.),y],'6.182')
-    call test_one_ginac([(-1 + y - y**2)/y,(-1.,0.),x],'6.183')
-    call test_one_ginac([(-1 + y - y**2)/y,-(1/y),x],'6.184')
-    call test_one_ginac([(-1 + y - y**2)/y,-y,x],'6.185')
-    call test_one_ginac([(-1 + y - y**2)/y,-(1/y),(-1.,0.),x],'6.186')
-    call test_one_ginac([(-1 + y - y**2)/y,-y,(-1.,0.),x],'6.187')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),(0.,0.),(0.,0.),y],'6.188')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(0.,0.),(1.,0.),(0.,0.),y],'6.189')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),(1.,0.),(0.,0.),(0.,0.),y],'6.190')
-    call test_one_ginac([-cmplx(-0.5,sqrt(3.)/2.),(0.,0.),(0.,0.),(0.,0.),y],'6.191')
-    call test_one_ginac([-cmplx(-0.5,sqrt(3.)/2.),(0.,0.),(1.,0.),(0.,0.),y],'6.192')
-    call test_one_ginac([-cmplx(-0.5,sqrt(3.)/2.),(1.,0.),(0.,0.),(0.,0.),y],'6.193')
-    call test_one_ginac([(-1 + y - y**2)/y,(-1.,0.),(0.,0.),(-1.,0.),x],'6.194')
-    call test_one_ginac([(-1 + y - y**2)/y,-(1/y),(0.,0.),(-1.,0.),x],'6.195')
-    call test_one_ginac([(-1 + y - y**2)/y,-y,(0.,0.),(-1.,0.),x],'6.196')
-    call test_one_ginac([cmplx(0.5,sqrt(3.)/2.),y],'6.197')
-    call test_one_ginac([-cmplx(-0.5,sqrt(3.)/2.),y],'6.198')
-    call cpu_time(tend)
-    write(*,900) msg,198./(tend-tstart)
 
-900 format("Evaluating ",A," at ",F9.2,"G/s")
+  function evalt(arr, what)
+    implicit none
+    complex(kind=prec) :: arr(:), evalt, geval
+    integer what, i, l
+
+    evalt =0.
+
+    do i=1,size(arr)
+      if (arr(i) .ne. arr(i)) then ! isnan?
+        l = i-1
+        goto 123
+      endif
+    enddo
+    l = size(arr)
+
+123 continue
+    if (l==0) return
+
+    if (what .eq. 0) then
+      evalt = G(arr(1:l))
+    elseif (what.eq.1) then
+      evalt = geval(arr(1:l),l)
+    endif
+  end function
+
+  subroutine perform_ginacv(n, args)
+    use maths_functions, only:clearcache
+    complex(kind=prec) :: args(:,:)
+    integer i,n
+    call clearcache
+
+    do i=1,size(args,1)
+      write(*,900) n,i
+      call check(evalt(args(i,:),0),evalt(args(i,:),1))
+    enddo
+
+900 format("   testing GPL ",I1,".",I4.4," ...")
+
   end subroutine
+
+  subroutine do_ginac_tests
+    use maths_functions, only:clearcache
+    use gtestchen   , only: inichen   =>args
+    use gtestmuone  , only: inimuone  =>args
+    use gtestmuonenp, only: inimuonenp=>args
+    implicit none
+    tol = 6.0e-6
+    call perform_ginacv( 6, inichen   (cmplx(0.3), cmplx(0.1)) )
+    call perform_ginacv( 7, inimuone  (cmplx(0.5), cmplx(0.6)) )
+    call perform_ginacv( 8, inimuonenp(cmplx(0.3), cmplx(0.6)) )
+
+  end subroutine
+
+
 #endif
   ! subroutine do_shuffle_tests() 
   !   complex(kind=prec) :: v(2) = cmplx((/1,2/))
