@@ -18,11 +18,12 @@ CONTAINS
     integer :: l
     type(inum) :: y
     complex(kind=prec) :: GPL_zero_zi
+    !TODO
     if (abs(aimag(y)).lt.zero) then
       if (real(y).gt.0) then
         GPL_zero_zi = 1.0_prec/factorial(l) * log(real(y)) ** l
       else
-        GPL_zero_zi = 1.0_prec/factorial(l) * (log(-real(y))-cmplx(0,y%i0*pi)) ** l
+        GPL_zero_zi = 1.0_prec/factorial(l) * (log(-real(y))+cmplx(0,y%i0*pi)) ** l
       endif
     else
       GPL_zero_zi = 1.0_prec/factorial(l) * log(y%c) ** l
