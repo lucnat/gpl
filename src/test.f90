@@ -295,12 +295,14 @@ CONTAINS
 
   subroutine do_timing_tests(n)
     use gtestchen   , only: inichen   =>args
+    use gtestchenff , only: inichenff =>args
     use gtestmuone  , only: inimuone  =>args
     use gtestmuonenp, only: inimuonenp=>args
     implicit none
     integer, intent(in) :: n
     integer i
     complex(kind=prec) :: cargs( 1399,5,n)
+    complex(kind=prec) :: fargs(  540,5,n)
     complex(kind=prec) :: pargs(  198,5,n)
     complex(kind=prec) :: nargs( 1733,5,n)
     real(kind=prec) :: z, x, y, w
@@ -310,7 +312,8 @@ CONTAINS
     do i=1,n
       z = ran2(ranseed) / 2.
       x = ran2(ranseed)*(1-z) + z
-      cargs(:,:,i) = inichen(cmplx(x), cmplx(z))
+      cargs(:,:,i) = inichen  (cmplx(x), cmplx(z))
+      fargs(:,:,i) = inichenff(cmplx(x), cmplx(z))
 
       w = ran2(ranseed) ! 0<w<1
       z = ran2(ranseed) * (sqrt(1-w+w**2)-sqrt(w)) + sqrt(w)
@@ -322,9 +325,12 @@ CONTAINS
     enddo
 
     cargs(1181,:,:)=cargs(1181,:,:)/0
+    fargs(367,:,:)=fargs(367,:,:)/0
 
 
     open(unit=9, file="stats.txt")
+    write(9,*) "Chen form factor"
+    call do_one_speed_test(fargs,9,"Chen FF")
     write(9,*) "Chen"
     call do_one_speed_test(cargs,9,"Chen")
     write(9,*) "MUonE-planar"

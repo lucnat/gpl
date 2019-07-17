@@ -502,6 +502,9 @@ gpl: build/mathlink.o libgpl.a
 checks/test-chen.f90: checks/generate.m
 		@echo "MATH generate \$@"
 		@\$(MATH) -script \$< \$@
+checks/test-chenFF.f90: checks/generate.m
+		@echo "MATH generate \$@"
+		@\$(MATH) -script \$< \$@
 checks/test-muone.f90: checks/generate.m
 		@echo "MATH generate \$@"
 		@\$(MATH) -script \$< \$@
@@ -516,6 +519,7 @@ echo -n "test: \$(objects) " >> makefile
                             echo -n "build/test-chenref.o " >> makefile
 $HAVE_GINAC              && echo -n "build/ginac.o " >> makefile
 $HAVE_GINAC && $HAVE_MCC && echo -n "build/test-chen.o " >> makefile
+$HAVE_GINAC && $HAVE_MCC && echo -n "build/test-chenFF.o " >> makefile
 $HAVE_GINAC && $HAVE_MCC && echo -n "build/test-muone.o " >> makefile
 $HAVE_GINAC && $HAVE_MCC && echo -n "build/test-muoneNP.o " >> makefile
 
