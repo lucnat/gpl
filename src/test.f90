@@ -289,6 +289,23 @@ CONTAINS
     print*,
     write(*,901) msg, size(args,1)/ttime(2)/1000., size(args,1)/ttime(1)/1000., int(ttime(2)/ttime(1))
 
+    ! Lets to another, fair comparison
+    call system_clock(cstart, count_rate=count_rate)
+    do j=1,size(args,1)
+      res=evalt(args(j,:,1),0)
+    enddo
+    call system_clock(cend, count_rate=count_rate)
+    ttime(1) = real(cend-cstart)/count_rate
+
+    call system_clock(cstart, count_rate=count_rate)
+    do j=1,size(args,1)
+      res=evalt(args(j,:,1),1)
+    enddo
+    call system_clock(cend, count_rate=count_rate)
+    ttime(2) = real(cend-cstart)/count_rate
+
+    write(*,901) msg, size(args,1)/ttime(2)/1000., size(args,1)/ttime(1)/1000., int(ttime(2)/ttime(1))
+
 900 FORMAT(a , 'Function ',i4,'/',i4,' for ',a)
 901 format('Evaluating ',A,' using GiNaC at ',F9.2,'kG/s and GPL at ',F9.2,'kG/s (',I3,'x)')
   end subroutine

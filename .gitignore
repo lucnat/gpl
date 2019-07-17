@@ -3,6 +3,7 @@
 !*.*
 makefile
 checks/*.f90
+checks/stats.txt
 ### Vim ###
 # Swap
 [._]*.s[a-v][a-z]
