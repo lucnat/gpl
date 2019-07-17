@@ -428,6 +428,9 @@ _EOF_
 fi
 
 
+if $HAVE_GINAC && $HAVE_MCC; then
+  eval addflag LFLAGS -lrt
+fi
 
 echo "creating makefile" 1>&3
 

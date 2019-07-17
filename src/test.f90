@@ -257,27 +257,28 @@ CONTAINS
     use maths_functions, only:clearcache
     implicit none
     complex(kind=prec) :: args(:,:,:),res
-    real(kind=prec) :: tstart, tend, time(2), ttime(2)
+    integer(kind=8) cstart, cend, count_rate
+    real(kind=prec) :: time(2), ttime(2)
     integer i,j, u
     character,parameter :: cr = achar(13)
     character(len=*) msg
     do j=1,size(args,1)
       ! try function a bunch of times
-      call cpu_time(tstart)
+      call system_clock(cstart, count_rate=count_rate)
       do i=1,size(args,3)
         res=evalt(args(j,:,i),0)
       enddo
-      call cpu_time(tend)
-      time(1) = (tend-tstart)/size(args,3)
-      if (time(1).lt.zero) print*,j
+      call system_clock(cend, count_rate=count_rate)
+      time(1) = real(cend-cstart)/count_rate/size(args,3)
+      if (time(1).lt.zero) print*,j, cend-cstart,count_rate
       ttime(1) = ttime(1) + time(1)
 
-      call cpu_time(tstart)
+      call system_clock(cstart, count_rate=count_rate)
       do i=1,size(args,3)
         res=evalt(args(j,:,i),1)
       enddo
-      call cpu_time(tend)
-      time(2) = (tend-tstart)/size(args,3)
+      call system_clock(cend, count_rate=count_rate)
+      time(2) = real(cend-cstart)/count_rate/size(args,3)
       if (time(2).lt.zero) print*,j
       ttime(2) = ttime(2) + time(2)
 
