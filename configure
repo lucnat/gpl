@@ -550,11 +550,11 @@ check: test
 clean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
 		@rm -f test geval libgpl.a gpl
-		@rm -f checks/*.f90
+		@rm -f checks/test-chen.f90 checks/test-muone.f90 checks/test-muoneNP.f90
 
 distclean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
 		@rm -f test geval libgpl.a gpl
-		@rm -f checks/*.f90
+		@rm -f checks/test-chen.f90 checks/test-muone.f90 checks/test-muoneNP.f90
 		@rm -f makefile
 EOF
