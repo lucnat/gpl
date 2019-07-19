@@ -1,14 +1,22 @@
+:Evaluate: BeginPackage["handyG`"];
 :Evaluate:
-  gpl`args2r[a_]:=Re[N[a/.SubPlus|SubMinus->Identity]];
-  gpl`args2i[a_]:=Im[N[a/.SubPlus|SubMinus->Identity]];
-  gpl`args2e[a_]:=Switch[Head[#], SubPlus, 1, SubMinus, -1, _, 1]& /@ a;
+  Print["handyG by L. Naterop, Y. Ulrich, A. Signer"];
+  G::usage = "G function";
+  Begin["`Private`"];
+  args2r[a_]:=Re[N[a/.SubPlus|SubMinus->Identity]];
+  args2i[a_]:=Im[N[a/.SubPlus|SubMinus->Identity]];
+  args2e[a_]:=Switch[Head[#], SubPlus, 1, SubMinus, -1, _, 1]& /@ a;
 :Begin:
 :Function: gpl
-:Pattern: gG[a__]/;And @@ (NumberQ /@ ({a} /. SubPlus | SubMinus -> Identity))
-:Arguments: { gpl`args2r[{a}], gpl`args2i[{a}], gpl`args2e[{a}] }
+:Pattern: G[a__]/;And @@ (NumberQ /@ ({a} /. SubPlus | SubMinus -> Identity))
+:Arguments: {args2r[{a}],args2i[{a}],args2e[{a}] }
 :ArgumentTypes: {RealList,RealList,IntegerList}
 :ReturnType: Manual
 :End:
+
+:Evaluate:
+  End[];
+  EndPackage[];
 
 #include "mathlink.h"
 #include <math.h>
