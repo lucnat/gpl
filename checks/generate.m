@@ -81,7 +81,7 @@ MakeFile[getter_, name_, vars_]:=Block[{gs,filename},
 
 Switch[Last[$CommandLine],
   "checks/test-chen.f90",    MakeFile[GetChenGs   , "chen"   , {x, y}],
-  "checks/test-chenff.f90",  MakeFile[GetChenFFGs , "chenFF" , {x, y}],
+  "checks/test-chenff.f90",  MakeFile[GetChenFFGs , "chenff" , {x, y}],
   "checks/test-muone.f90",   MakeFile[GetMuoneGs  , "muone"  , {x, y}],
   "checks/test-muoneNP.f90", MakeFile[GetMuoneNPGs, "muoneNP", {w, z}],
   _, Print["Availble are chen, muone, muonenp"];
