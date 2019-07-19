@@ -13,7 +13,7 @@ checks/stats.txt
 [._]sw[a-p]
 build/mcc*
 build/*.c
-gpl
+handyg
 *.out
 *.o
 *.mod

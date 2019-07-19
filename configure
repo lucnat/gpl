@@ -457,13 +457,13 @@ PREFIX=$CONF_PREFIX
 MMPREFIX=$CONF_MMPREFIX
 
 
-files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o GPL.o
+files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o handyG.o
 objects = \$(addprefix build/,\$(files))
 
 
-all: libgpl.a ${CONF_MPREP:+gpl} geval test
+all: libhandyg.a ${CONF_MPREP:+handyg} geval test
 
-libgpl.a:\$(objects)
+libhandyg.a:\$(objects)
 		@echo "AR \$@"
 		@\$(AR) \$@ $^
 
@@ -480,9 +480,9 @@ build/%.o: src/%.cpp
 		@echo "C++ \$@"
 		@\$(CC) \$(CPPFLAGS) -c $<  -o \$@
 
-geval: libgpl.a build/geval.o
+geval: libhandyg.a build/geval.o
 		@echo "LD \$@"
-		@\$(LD) -o \$@ build/geval.o -L. -lgpl \$(LFLAGS)
+		@\$(LD) -o \$@ build/geval.o -L. -lhandyg \$(LFLAGS)
 
 EOF
 
@@ -495,9 +495,9 @@ build/mathlink.o: build/mathlink.tm.c
 		@echo "CC \$<"
 		@\$(CC) \$(MCFLAGS) \$(CFLAGS) -o \$@ -c \$<
 
-gpl: build/mathlink.o libgpl.a
+handyg: build/mathlink.o libhandyg.a
 		@echo "LD \$@"
-		@\$(LD)  \$< libgpl.a -o \$@ \$(LFLAGS) \$(MLFLAGS)
+		@\$(LD)  \$< libhandyg.a -o \$@ \$(LFLAGS) \$(MLFLAGS)
 
 checks/test-chen.f90: checks/generate.m
 		@echo "MATH generate \$@"
@@ -528,26 +528,26 @@ cat  >> makefile <<EOF
 		@echo "LD \$@"
 		@\$(LD) -o \$@ $^ \$(LFLAGS)
 
-install: libgpl.a build/gpl.mod ${CONF_MPREP:+gpl} geval
+install: libhandyg.a build/handyg.mod ${CONF_MPREP:+handyg} geval
 		mkdir -p \$(PREFIX)
 		mkdir -p \$(PREFIX)/bin
 		cp geval \$(PREFIX)/bin/geval
 		mkdir -p \$(PREFIX)/lib
-		cp libgpl.a \$(PREFIX)/lib/
+		cp libhandyg.a \$(PREFIX)/lib/
 		mkdir -p \$(PREFIX)/include
-		cp build/gpl.mod \$(PREFIX)/include/
+		cp build/handyg.mod \$(PREFIX)/include/
 EOF
 $HAVE_MCC && cat >> makefile <<EOF
 		mkdir -p \$(MMPREFIX)
-		cp gpl \$(MMPREFIX)
+		cp handyg \$(MMPREFIX)
 EOF
 
 echo "uninstall:" >> makefile
 echo -ne "\t\trm -i " >> makefile
-echo -n "\$(PREFIX)/lib/libgpl.a " >> makefile
-echo -n "\$(PREFIX)/include/gpl.mod " >> makefile
+echo -n "\$(PREFIX)/lib/libhandyg.a " >> makefile
+echo -n "\$(PREFIX)/include/handyg.mod " >> makefile
 echo -n "\$(PREFIX)/bin/geval " >> makefile
-$HAVE_MCC && echo -n "\$(MMPREFIX)/gpl" >> makefile
+$HAVE_MCC && echo -n "\$(MMPREFIX)/handyg" >> makefile
 cat  >> makefile <<EOF
 
 
@@ -556,12 +556,12 @@ check: test
 
 clean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
-		@rm -f test geval libgpl.a gpl
+		@rm -f test geval libhandyg.a handyg
 		@rm -f checks/test-chen.f90 checks/test-muone.f90 checks/test-muoneNP.f90
 
 distclean:
 		@rm -f build/*.o build/*.mod build/*.c build/mcc.internals*
-		@rm -f test geval libgpl.a gpl
+		@rm -f test geval libhandyg.a handyg
 		@rm -f checks/test-chen.f90 checks/test-muone.f90 checks/test-muoneNP.f90
 		@rm -f makefile
 EOF
