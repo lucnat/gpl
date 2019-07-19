@@ -9,7 +9,9 @@ MODULE gpl_module
   implicit none
 
   INTERFACE G
-    module procedure G_flat, G_condensed, G_superflat, G_real, G_int
+    module procedure G_flat, G_flatR, G_flatC, &
+                     G_condensed, G_condensedS, G_condensedR, G_condensedC, &
+                     G_superflat, G_real, G_int
   END INTERFACE G
 CONTAINS 
 
@@ -504,6 +506,54 @@ CONTAINS
     complex(kind=prec) g_superflatn
     G_superflatn = G_flat(c0(1:n-1), c0(n))
   END FUNCTION
+
+  FUNCTION G_FLATr(Z_FLAT,Y)
+    real(kind=prec), intent(in) :: z_flat(:), y
+    complex(kind=prec) :: g_flatr
+    g_flatr = G_flat(toinum(cmplx(z_flat)), inum(cmplx(y),di0))
+  END FUNCTION
+
+  FUNCTION G_FLATc(Z_FLAT,Y)
+    complex(kind=prec), intent(in) :: z_flat(:), y
+    complex(kind=prec) :: g_flatc
+    g_flatc = G_flat(toinum(z_flat), inum(y,di0))
+  END FUNCTION
+
+
+  FUNCTION G_CONDENSEDs(M,Z,Y)
+    implicit none
+    type(inum), intent(in) :: z(:), y
+    integer m(:)
+    complex(kind=prec) g_condenseds
+    if (size(m) .ne. size(z)) then
+      print*,"G_condesed: weight and args must have the same length",size(m),size(z)
+      stop
+    endif
+    g_condensedS = G_condensed(m, z, y, size(m))
+  END FUNCTION
+  FUNCTION G_CONDENSEDr(M,Z,Y)
+    implicit none
+    real(kind=prec), intent(in) :: z(:), y
+    integer m(:)
+    complex(kind=prec) g_condensedr
+    if (size(m) .ne. size(z)) then
+      print*,"G_condesed: weight and args must have the same length",size(m),size(z)
+      stop
+    endif
+    g_condensedr = G_condensed(m, toinum(z), inum(y,di0), size(m))
+  END FUNCTION
+  FUNCTION G_CONDENSEDc(M,Z,Y)
+    implicit none
+    complex(kind=prec), intent(in) :: z(:), y
+    integer m(:)
+    complex(kind=prec) g_condensedc
+    if (size(m) .ne. size(z)) then
+      print*,"G_condesed: weight and args must have the same length",size(m),size(z)
+      stop
+    endif
+    g_condensedc = G_condensed(m, toinum(z), inum(y,di0), size(m))
+  END FUNCTION
+
 
 END MODULE gpl_module
 
