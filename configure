@@ -179,11 +179,11 @@ case "$1,$2,$3" in
             eval addflag FFLAGS -DRELEASE -O3 -fast
             $NATIVE && eval addflag FFLAGS -xHost
         fi
-        if HAVE_GINAC ; then
+        if $HAVE_GINAC ; then
             echo "Option --with-ginac is incompatible with ifort, disabling" 1>&3
             HAVE_GINAC=false
         fi
-        if HAVE_MCC ; then
+        if $HAVE_MCC ; then
             echo "Option --with-mcc is incompatible with ifort, disabling" 1>&3
             HAVE_MCC=false
         fi
@@ -343,6 +343,7 @@ _EOF_
     arch=`cat $test.int | grep "Library Bit Type:" | cut -f2 -d":"` ; \
     CONF_MCC_CFLAGS=`cat $test.int | grep "Compile Flags$arch:" | cut -f2 -d":"`
     CONF_MCC_LFLAGS=`cat $test.int | grep "Linker Libraries" | cut -f2 -d":"`
+    CONF_MCC_LFLAGS="$CONF_LFLAGS $CONF_MCC_LFLAGS"
     cat $test.int | grep "Linker Libraries" | cut -f2 -d":"
     if [ ! -z $CONF_BITS ]; then
         if [ "$CONF_BITS" -ne "$MCC_BITS" ]; then
