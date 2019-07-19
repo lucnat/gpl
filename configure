@@ -24,6 +24,7 @@ CONF_FC=$FC
 CONF_CC=$CC
 CONF_CXX=$CXX
 CONF_LD=$LD
+CONF_MODPATH=$FPATH
 
 
 if [ "$CONF_OS" -eq "Darwin" ]; then
@@ -225,14 +226,38 @@ while read line ; do
       shift ;;
     esac
   done
+
+  if [[ "$line" == *"-fintrinsic-modules-path"* ]]; then
+    set -- ${line//[:,()]/ }
+    while test $# -gt 1 ; do
+      shift
+      case "$1" in
+        -fintrinsic-modules-path )
+          CONF_MODPATH=$2
+          ;;
+      esac
+    done
+  fi
 done < <(eval $CONF_FC  -v -o $test $test.f90 2>&1)
 echo "ok" 1>&3
 
 eval addflag LFLAGS "$LDFLAGS $CONF_LDFLAGS $FLDFLAGS -L$CONF_PREFIX/lib"
 
+if [[ ! -z "$CONF_MODPATH" ]]; then
+    echo -n "checking whether module path is in prefix... " 1>&3
+    if [[ "${CONF_MODPATH##$CONF_PREFIX}" != "${CONF_MODPATH}" ]]; then
+        echo " yes" 1>&3
+        CONF_MODPATH="${CONF_MODPATH##$CONF_PREFIX}"
+    else
+        echo " no" 1>&3
+        CONF_MODPATH=
+    fi
+fi
+
 
 findprog pkg-config PKGCONFIG pkg-config
-if [[ -z "$CONF_PKGCONFIG" ]]; then
+if [[ -z "$CONF_MODPATH" ]]; then
+  if [[ -z "$CONF_PKGCONFIG" ]]; then
     echo "*************************************************" 1>&3
     echo "Warning! pkg-config not found! This may lead to  " 1>&3
     echo "difficulties when you try to compile your own    " 1>&3
@@ -242,6 +267,7 @@ if [[ -z "$CONF_PKGCONFIG" ]]; then
     echo "                                                 " 1>&3
     echo "every time.                                      " 1>&3
     echo "*************************************************" 1>&3
+  fi
 fi
 
 if ( $HAVE_GINAC || $HAVE_MCC ); then
@@ -482,6 +508,7 @@ MLFLAGS=$CONF_MCC_LFLAGS
 
 PREFIX=$CONF_PREFIX
 MMPREFIX=$CONF_MMPREFIX
+MODPATH=$CONF_MODPATH
 
 
 files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o handyG.o
@@ -574,6 +601,13 @@ cat >> makefile <<EOF
 		cp handyg.pc \$(PREFIX)/lib/pkgconfig
 EOF
 fi
+if [[ ! -z "$CONF_MODPATH" ]]; then
+cat >> makefile <<EOF
+		mkdir -p \$(PREFIX)/\$(MODPATH)
+		cp build/handyg.mod \$(PREFIX)/\$(MODPATH)
+EOF
+fi
+
 
 echo "uninstall:" >> makefile
 echo -ne "\t\trm -i " >> makefile
@@ -583,6 +617,9 @@ echo -n "\$(PREFIX)/bin/geval " >> makefile
 $HAVE_MCC && echo -n "\$(MMPREFIX)/handyg" >> makefile
 if [[ ! -z "$CONF_PKGCONFIG" ]]; then
 echo -n "\$(PREFIX)/lib/pkgconfig " >> makefile
+fi
+if [[ ! -z "$CONF_MODPATH" ]]; then
+echo -n "\$(PREFIX)/\$(MODPATH)/handyg.mod " >> makefile
 fi
 cat  >> makefile <<EOF
 
