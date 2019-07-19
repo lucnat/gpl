@@ -127,7 +127,7 @@ CONTAINS
       !  + G_flat(p(2:size(p)), p(1)) * log(-sub_ieps(g(1)))
       !TODO
       res = pending_integral(p,2,[g(1)]) - pending_integral(p,2,[izero]) &
-        + G_flat(p(2:size(p)), p(1)) * conjg(log(-g(1)%c))
+        + G_flat(p(2:size(p)), p(1)) * (log(g(1)%c) + p(1)%i0 * pi * (0.,1.))
       return
     end if
   
