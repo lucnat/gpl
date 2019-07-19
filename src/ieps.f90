@@ -4,10 +4,10 @@ MODULE ieps
   implicit none
   type inum
     complex(kind=prec) :: c
-    integer(8) :: i0
+    integer(1) :: i0
   end type inum
 
-  integer(8), parameter :: di0 = +1
+  integer(1), parameter :: di0 = +1
 
   type(inum), parameter :: izero=inum( 0.,di0)
   type(inum), parameter :: marker=inum(0.,5)
@@ -18,7 +18,7 @@ MODULE ieps
   end interface abs
 
   interface toinum
-    module procedure toinum_cmplx, toinum_real, toinum_int
+    module procedure toinum_cmplx, toinum_real, toinum_reals, toinum_int
   end interface toinum
   interface tocmplx
     module procedure tocmplxv, tocmplxs
@@ -47,8 +47,8 @@ CONTAINS
   FUNCTION TOINUM_cmplx(z, s)
   complex(kind=prec) :: z(:)
   type(inum) :: toinum_cmplx(size(z))
-  integer(8),optional :: s
-  integer(8) :: ss
+  integer(1),optional :: s
+  integer(1) :: ss
   integer i
   if (present(s)) then
     ss = s
@@ -63,8 +63,8 @@ CONTAINS
   FUNCTION TOINUM_real(z, s)
   real(kind=prec) :: z(:)
   type(inum) :: toinum_real(size(z))
-  integer(8),optional :: s
-  integer(8) :: ss
+  integer(1),optional :: s
+  integer(1) :: ss
   integer i
   if (present(s)) then
     ss = s
@@ -80,8 +80,8 @@ CONTAINS
   FUNCTION TOINUM_int(z, s)
   integer :: z(:)
   type(inum) :: toinum_int(size(z))
-  integer(8),optional :: s
-  integer(8) :: ss
+  integer(1),optional :: s
+  integer(1) :: ss
   integer i
   if (present(s)) then
     ss = s
@@ -92,6 +92,20 @@ CONTAINS
     toinum_int(i) = inum(z(i), ss)
   enddo
   END FUNCTION TOINUM_int
+
+  FUNCTION TOINUM_reals(z, s)
+  real(kind=prec) :: z
+  type(inum) :: toinum_reals
+  integer(1),optional :: s
+  integer(1) :: ss
+  if (present(s)) then
+    ss = s
+  else
+    ss = di0
+  endif
+  toinum_reals = inum(z, ss)
+  END FUNCTION TOINUM_reals
+
 
   FUNCTION TOCMPLXv(z)
   type(inum) :: z(:)
