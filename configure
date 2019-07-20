@@ -91,7 +91,6 @@ else
     CONF_PREFIX=/usr/
 fi
 
-CONF_MODDIR=$CONF_PREFIX/include
 
 NATIVE=true
 DEBUG=false
@@ -312,7 +311,7 @@ if [[ -z "$CONF_MODDIR" ]]; then
     echo -n "checking whether module path is in prefix... " 1>&3
     if [[ "${CONF_MODPATH##$CONF_PREFIX}" != "${CONF_MODPATH}" ]]; then
         echo " yes" 1>&3
-        CONF_MODDIR="${CONF_MODPATH##$CONF_PREFIX}"
+        CONF_MODDIR=$CONF_MODPATH
     else
         echo " no" 1>&3
         CONF_MODDIR=
@@ -576,7 +575,7 @@ MLFLAGS=$CONF_MCC_LFLAGS
 
 PREFIX=$CONF_PREFIX
 MMPREFIX=$CONF_MMPREFIX
-MODPATH=$CONF_MODDIR
+MODDIR=$CONF_MODDIR
 
 
 files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o handyG.o
@@ -669,10 +668,10 @@ cat >> makefile <<EOF
 		cp handyg.pc \$(PREFIX)/lib/pkgconfig
 EOF
 fi
-if [[ ! -z "$CONF_MODPATH" ]]; then
+if [[ ! -z "$CONF_MODDIR" ]]; then
 cat >> makefile <<EOF
-		mkdir -p \$(PREFIX)/\$(MODPATH)
-		cp build/handyg.mod \$(PREFIX)/\$(MODPATH)
+		mkdir -p \$(MODDIR)
+		cp build/handyg.mod \$(MODDIR)
 EOF
 fi
 
@@ -686,8 +685,8 @@ $HAVE_MCC && echo -n "\$(MMPREFIX)/handyg" >> makefile
 if [[ ! -z "$CONF_PKGCONFIG" ]]; then
 echo -n "\$(PREFIX)/lib/pkgconfig " >> makefile
 fi
-if [[ ! -z "$CONF_MODPATH" ]]; then
-echo -n "\$(PREFIX)/\$(MODPATH)/handyg.mod " >> makefile
+if [[ ! -z "$CONF_MODDIR" ]]; then
+echo -n "\$(MODDIR)/handyg.mod " >> makefile
 fi
 cat  >> makefile <<EOF
 
