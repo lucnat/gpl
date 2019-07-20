@@ -9,22 +9,80 @@ eval ${LOGFILE:+set -x}
 shopt -s nullglob
 export LC_ALL=C
 
+printhelp() {
+cat << EOF
+\`configure' configures handyG to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Defaults for the options are specified in brackets.
+
+Installation directories:
+  --prefix=PREFIX         install files in PREFIX [/usr/]
+  --mmprefix=PREFIX       install files in for Mathematica
+                          [\$UserBaseDirectory/Kernel/]
+
+By default, \`make install' will install all the files in
+\`/usr/local/bin', \`/usr/local/lib' etc.  You can specify
+an installation prefix other than \`/usr/local' using \`--prefix',
+for instance \`--prefix=\$HOME'.
+
+For better control, use the options below.
+  --moduledir=DIR         Fortran module files (compiler specific)
+
+Fine tuning of the installation directories:
+
+System types:
+  --32                    forces 32-bit compilation
+  --64                    forces 64-bit compilation
+  --generic               do not optimize code for the host machine
+
+Optional Packages:
+  --with-mcc              activates Mathematica interface
+  --with-ginac            activates GiNaC interface for testing
+  --debug                 compile with debug flags and without optimization
+
+Some influential environment variables:
+  FC          Fortran compiler command
+  FFLAGS      Fortran compiler flags
+  LD          linker command
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
+  FPATH       Path to put Fortran modules
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+
+Use these variables to override the choices made by \`configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+Report bugs to <yannick.ulrich@psi.ch>.
+
+EOF
+exit
+}
+
 CONF_DIR="${0%/*}"
 CONF_OS="`uname -s`"
-CONF_MACH="`uname -m`"
 HAVE_GINAC=false
 HAVE_MCC=false
 CONF_BITS=
 
 CONF_FFLAGS=$FFLAGS
 CONF_CFLAGS=$CFLAGS
-CONF_CPPFLAGS=$CPPFLAGS
+CONF_CXXFLAGS=$CXXFLAGS
 CONF_LFLAGS=$LDFLAGS
 CONF_FC=$FC
 CONF_CC=$CC
 CONF_CXX=$CXX
 CONF_LD=$LD
-CONF_MODPATH=$FPATH
+CONF_MODDIR=$FPATH
 
 
 if [ "$CONF_OS" -eq "Darwin" ]; then
@@ -32,6 +90,8 @@ if [ "$CONF_OS" -eq "Darwin" ]; then
 else
     CONF_PREFIX=/usr/
 fi
+
+CONF_MODDIR=$CONF_PREFIX/include
 
 NATIVE=true
 DEBUG=false
@@ -41,8 +101,8 @@ for arg in "$@" ; do
             DEBUG=true ;;
         --prefix=*)
             CONF_PREFIX="${arg#--prefix=}" ;;
-        --host=*)
-            CONF_TARGET="${arg#--host=}" ;;
+        --moduledir=*)
+            CONF_MODDIR="${arg#--moduledir=}" ;;
         --with-ginac)
             HAVE_GINAC=true ;;
         --with-mcc)
@@ -55,12 +115,16 @@ for arg in "$@" ; do
             CONF_BITS="-m32" ;;
         --64)
             CONF_BITS="-m64" ;;
+        --help )
+            printhelp ;;
         -*)
-            echo "Warning: $arg is not a valid option." 1>&3 ;;
+            echo "Warning: $arg is not a valid option." 1>&3
+            printhelp ;;
         *=*)
             eval "$arg" ;;
         *)
-            echo "Warning: $arg is not a valid argument." 1>&3 ;;
+            echo "Warning: $arg is not a valid argument." 1>&3
+            printhelp ;;
     esac
 done
 
@@ -243,20 +307,22 @@ echo "ok" 1>&3
 
 eval addflag LFLAGS "$LDFLAGS $CONF_LDFLAGS $FLDFLAGS -L$CONF_PREFIX/lib"
 
-if [[ ! -z "$CONF_MODPATH" ]]; then
+if [[ -z "$CONF_MODDIR" ]]; then
+  if [[ ! -z "$CONF_MODPATH" ]]; then
     echo -n "checking whether module path is in prefix... " 1>&3
     if [[ "${CONF_MODPATH##$CONF_PREFIX}" != "${CONF_MODPATH}" ]]; then
         echo " yes" 1>&3
-        CONF_MODPATH="${CONF_MODPATH##$CONF_PREFIX}"
+        CONF_MODDIR="${CONF_MODPATH##$CONF_PREFIX}"
     else
         echo " no" 1>&3
-        CONF_MODPATH=
+        CONF_MODDIR=
     fi
+  fi
 fi
 
 
 findprog pkg-config PKGCONFIG pkg-config
-if [[ -z "$CONF_MODPATH" ]]; then
+if [[ -z "$CONF_MODDIR" ]]; then
   if [[ -z "$CONF_PKGCONFIG" ]]; then
     echo "*************************************************" 1>&3
     echo "Warning! pkg-config not found! This may lead to  " 1>&3
@@ -327,7 +393,8 @@ _EOF_
     CONF_MATH_SYS=`cat $test.log | grep "SYSID"   | sed 's/.*SYSID //'`
     CONF_MATH_DIR=`cat $test.log | grep "INSTDIR" | sed 's/.*INSTDIR //'`
     CONF_MATH_USR=`cat $test.log | grep "USERDIR" | sed 's/.*USERDIR //'`
-    CONF_MMPREFIX=${CONF_MMPREFIX:=$CONF_MATH_USR/Kernel}
+    [[ -z "$CONF_MMPREFIX" ]] && \
+       CONF_MMPREFIX=${CONF_MMPREFIX:=$CONF_MATH_USR/Kernel}
     echo  $CONF_MATH_SYS 1>&3
 
 
@@ -408,12 +475,12 @@ CONF_LD=${LD:-$CONF_FC}
 
 
 if $HAVE_GINAC ; then
-    eval addflag CPPFLAGS "-std=c++11"
+    eval addflag CXXFLAGS "-std=c++11"
     if [[ ! -z "$CONF_PKGCONFIG" ]]; then
         echo -n "Does pkg-config know about GiNaC... " 1>&3
         if $CONF_PKGCONFIG --exists ginac ; then
             echo "yes" 1>&3
-            eval addflag CPPFLAGS `$CONF_PKGCONFIG --cflags ginac`
+            eval addflag CXXFLAGS `$CONF_PKGCONFIG --cflags ginac`
             eval addflag LFLAGS `$CONF_PKGCONFIG --libs ginac`
             FOUND_GINAC=true
             CONF_GINAC=`$CONF_PKGCONFIG --variable=libdir ginac`
@@ -445,7 +512,7 @@ int main() {
         return 1;
 }
 _EOF_
-        $CONF_CXX $CONF_CPPFLAGS $CONF_BITS -c $test.ginac.cpp
+        $CONF_CXX $CONF_CXXFLAGS $CONF_BITS -c $test.ginac.cpp
         $CONF_LD -o $test.ginac $test.ginac.o $CONF_LFLAGS
         ./$test.ginac
         case $? in
@@ -481,7 +548,7 @@ Name: handyG
 Description: Numerical evaluation of GPL
 Version: 0.1.0
 Libs: -L\${libdir} -lhandyg
-Cflags: -I\${includedir}
+Cflags: -I\${includedir} -fdefault-real-8
 EOF
 
 fi
@@ -502,14 +569,14 @@ MATH=$CONF_MATH
 
 FFLAGS=$CONF_FFLAGS
 CFLAGS=$CONF_CFLAGS
-CPPFLAGS=$CONF_CPPFLAGS
+CXXFLAGS=$CONF_CXXFLAGS
 LFLAGS=$CONF_LFLAGS
 MCFLAGS=$CONF_MCC_CFLAGS
 MLFLAGS=$CONF_MCC_LFLAGS
 
 PREFIX=$CONF_PREFIX
 MMPREFIX=$CONF_MMPREFIX
-MODPATH=$CONF_MODPATH
+MODPATH=$CONF_MODDIR
 
 
 files=globals.o ieps.o utils.o shuffle.o maths_functions.o mpl_module.o gpl_module.o handyG.o
@@ -533,7 +600,7 @@ build/%.o: checks/%.f90
 
 build/%.o: src/%.cpp
 		@echo "C++ \$@"
-		@\$(CC) \$(CPPFLAGS) -c $<  -o \$@
+		@\$(CC) \$(CXXFLAGS) -c $<  -o \$@
 
 geval: libhandyg.a build/geval.o
 		@echo "LD \$@"
