@@ -92,6 +92,7 @@ else
 fi
 
 
+allargs="$@"
 NATIVE=true
 DEBUG=false
 for arg in "$@" ; do
@@ -556,7 +557,7 @@ echo "creating makefile" 1>&3
 
 
 cat  > makefile <<EOF
-# Generated through $0 $@ on `date` by `whoami`
+# Generated through $0 $allargs on `date` by `whoami`
 
 AR=ar rcs
 FC=$CONF_FC
