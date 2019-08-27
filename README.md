@@ -1,4 +1,10 @@
 
+## A handy implementation of generalized polylogarithms
+
+This repository contains the code for my thesis. It is a handy and rapid implementation of generalized polylogarithms, a class of functions that appear in perturbative quantum field theory. 
+
+Report: https://github.com/lucnat/handyG/raw/master/handyG-report.pdf
+
 ## Evaluate G(...) function
 
 Open `src/eval.f90` and modify the line   
